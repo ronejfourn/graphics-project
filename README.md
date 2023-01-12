@@ -12,7 +12,6 @@ cd graphics-project
 Visual Studio should open up and you can build/run the solution from there.
 
 ### Linux
-Install `glfw3`.
 ```sh
 git clone https://github.com/ronejfourn/graphics-project
 cd graphics-project

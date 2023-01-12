@@ -10,19 +10,15 @@ popd
 rmdir /Q /S premake
 :havePremake
 
-if not exist "extern/" mkdir extern
-
 pushd extern
 
-if exist "GLFW/" goto haveGLFW
-echo Downloading GLFW
-call curl -LO "https://github.com/glfw/glfw/releases/download/3.3.8/glfw-3.3.8.bin.WIN64.zip"
-call tar -xf glfw-3.3.8.bin.WIN64.zip
-del /q glfw-3.3.8.bin.WIN64.zip
-ren glfw-3.3.8.bin.WIN64 GLFW
-echo Finished Downloading GLFW
+if exist "glfw/" goto haveGLFW
+call curl -LO "https://github.com/glfw/glfw/archive/refs/tags/3.3.8.tar.gz"
+call tar -xf 3.3.8.tar.gz
+del 3.3.8.tar.gz
+ren glfw-3.3.8 glfw
 :haveGLFW
 
 popd extern
 
-call premake5 vs2022
+call .\premake5.exe vs2022
