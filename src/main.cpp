@@ -1,51 +1,19 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
-#include <cstdarg>
-#include <cstdint>
+#include <stdio.h>
+#include "common.hpp"
+#include "shader.hpp"
 
-typedef int8_t   i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
-
-typedef uint8_t   u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
     glViewport(0, 0, width, height);
     (void)window;
-}
-
-void die(const char *fmt, ...) {
-    // TODO report err before death
-    fprintf(stderr, fmt);
-    exit(1);
-}
-
-u32 create_and_compile_shader(GLenum type, const char * const *src) {
-    u32 sh = glCreateShader(type);
-    glShaderSource(sh, 1, src, NULL);
-    glCompileShader(sh);
-    int su = 0;
-    glGetShaderiv(sh, GL_COMPILE_STATUS, &su);
-    if (!su) {
-        char log[1025];
-        log [1024] = 0;
-        glGetShaderInfoLog(sh, 1024, nullptr, log);
-        // TODO better err msg
-        fprintf(stderr, "%s\n", log);
-        die("failed to compile shader\n");
-    }
-    return sh;
 }
 
 int main()
 {
     if (!glfwInit())
-        die("failed to init glfw\n");
+        die("failed to init glfw");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -57,7 +25,7 @@ int main()
     glfwMakeContextCurrent(win);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        die("failed to init glad\n");
+        die("failed to init glad");
 
     printf("Vendor: %s\nVersion: %s\nRenderer: %s\n", glGetString(GL_VENDOR), glGetString(GL_VERSION), glGetString(GL_RENDERER));
 
@@ -84,33 +52,33 @@ int main()
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    const char * vert_shader_src = " \
-        #version 330 core \n\
-        layout (location = 0) in vec3 aPos; \n\
-        layout (location = 1) in vec3 aCol; \n\
-        out vec3 vCol; \n\
-        void main() { \n\
-            gl_Position = vec4(aPos, 1.0f); \n\
-            vCol = aCol; \n\
-        } \
-    ";
+    const char * vert_shader_src = R"vsh(
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec3 aCol;
+        out vec3 vCol;
+        void main() {
+            gl_Position = vec4(aPos, 1.0f);
+            vCol = aCol;
+        }
+    )vsh";
 
-    const char * frag_shader_src = " \
-        #version 330 core \n\
-        in vec3 vCol; \n\
-        out vec4 fCol; \n\
-        void main() { \n\
-            fCol = vec4(vCol, 1.0f); \n\
-        } \
-    ";
+    const char * frag_shader_src = R"fsh(
+        #version 330 core
+        in vec3 vCol;
+        out vec4 fCol;
+        void main() {
+            fCol = vec4(vCol, 1.0f);
+        }
+    )fsh";
 
-    u32 vsh = create_and_compile_shader(GL_VERTEX_SHADER  , &vert_shader_src);
-    u32 fsh = create_and_compile_shader(GL_FRAGMENT_SHADER, &frag_shader_src);
+    u32 vsh = compile_shader(GL_VERTEX_SHADER  , vert_shader_src);
+    u32 fsh = compile_shader(GL_FRAGMENT_SHADER, frag_shader_src);
 
     u32 prog = glCreateProgram();
-    glAttachShader(prog, vsh); // TODO move these into fxn + check err
+    glAttachShader(prog, vsh);
     glAttachShader(prog, fsh);
-    glLinkProgram(prog);
+    link_program(prog);
 
     glClearColor(.18f, .18f, .18f, .18f);
     glUseProgram(prog);

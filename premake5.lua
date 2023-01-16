@@ -23,7 +23,7 @@ project "graphics-project"
 
   local GLFW = "%{wks.location}/extern/glfw/src/"
 
-  files { "**.cpp", "**.h" }
+  files { "**.cpp", "**.hpp" }
   files { "%{wks.location}/extern/glad/glad.c" }
   files {
     GLFW .. "context.c",
@@ -36,6 +36,7 @@ project "graphics-project"
     GLFW .. "egl_context.c",
   }
 
+  includedirs { "%{wks.location}/include" }
   includedirs { "%{wks.location}/extern/glad" }
   includedirs { "%{wks.location}/extern/glfw/include" }
 
