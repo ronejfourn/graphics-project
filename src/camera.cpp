@@ -2,7 +2,7 @@
 #include "camera.hpp"
 #include "math.hpp"
 
-constexpr f32 SPEED       =  2.5f ;
+constexpr f32 SPEED       =  10.0f ;
 constexpr f32 SENSITIVITY =  0.1f ;
 constexpr f32 ZOOM        =  20.0f;
 

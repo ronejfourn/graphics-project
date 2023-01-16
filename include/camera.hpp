@@ -41,6 +41,7 @@ class Camera{
                f32  yaw   = 0,
                f32  pitch = 0);
 
+        Vec4 getPosition() {return m_position;}
         void setFOV(f32 fov);
         void setAspectRatio(f32 ar);
         Mat4 getViewMatrix();

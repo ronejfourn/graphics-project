@@ -1,13 +1,26 @@
 #version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aCol;
-layout (location = 2) in vec2 aTexCoord;
+layout (location = 0) in uint aVert;
+
+uniform vec2 xz;
+uniform mat4 viewproj;
 
 out vec3 vCol;
-out vec2 TexCoord;
-uniform mat4 mvp;
+
 void main() {
-    gl_Position = mvp * vec4(aPos, 1.0f);;
-    vCol = aCol;
-    TexCoord=aTexCoord;
+    uint v = aVert;
+
+    float x = float(v &  31u);
+    v = v >> 5;
+    float z = float(v &  31u);
+    v = v >> 5;
+    float y = float(v & 511u);
+    v = v >> 9;
+    uint t = (v & 255u);
+
+    vCol = vec3(float(t & 1u), float((t >> 1) & 1u), float((t >> 2) & 1u));
+    gl_Position = viewproj * vec4(
+        x + xz.x * 16.0f,
+        y,
+        z + xz.y * 16.0f,
+        1.0f);
 }

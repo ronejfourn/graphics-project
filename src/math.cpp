@@ -5,7 +5,7 @@
 //
 
 f32 squareMagnitude(const Vec4& a) {
-    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    return (a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
 f32 magnitude(const Vec4& a){

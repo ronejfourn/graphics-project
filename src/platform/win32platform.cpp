@@ -6,8 +6,6 @@
 #endif
 #define WIN32_LEAN_AND_MEAN
 
-#include <cstdio>
-#include <cstdlib>
 #include <Windows.h>
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091

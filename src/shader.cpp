@@ -2,7 +2,6 @@
 #include "common.hpp"
 #include "glad/glad.h"
 #include <cstdlib>
-#include <stdio.h>
 
 static const char *shaderTypeToString(u32 type)
 {
