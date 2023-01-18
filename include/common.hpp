@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
+#include <assert.h>
 
 typedef int8_t   i8;
 typedef int16_t i16;
@@ -17,3 +18,9 @@ typedef float  f32;
 typedef double f64;
 
 void die(const char *fmt, ...);
+
+#ifdef DEBUG
+#define ASSERT(_cond, _msg) assert((_cond) && (_msg))
+#else
+#define ASSERT(_cond, _msg)
+#endif
