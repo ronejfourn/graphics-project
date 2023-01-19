@@ -1,7 +1,7 @@
 #include "shader.hpp"
 #include "common.hpp"
 
-static const char *shader_type_to_string(GLenum type)
+static const char *shaderTypeToString(GLenum type)
 {
     return type == GL_VERTEX_SHADER   ? "vertex"   :
            type == GL_FRAGMENT_SHADER ? "fragment" :
@@ -9,13 +9,13 @@ static const char *shader_type_to_string(GLenum type)
            "unknown";
 }
 
-GLuint compile_shader(GLenum type, const char *src)
+GLuint compileShader(GLenum type, const char *src)
 {
     GLint  su = 0;
     GLuint sh = glCreateShader(type);
     if (!sh) {
         die("failed to create %s shader",
-            shader_type_to_string(type));
+            shaderTypeToString(type));
     }
     glShaderSource(sh, 1, &src, NULL);
     glCompileShader(sh);
@@ -24,12 +24,12 @@ GLuint compile_shader(GLenum type, const char *src)
         GLchar log[1024];
         glGetShaderInfoLog(sh, 1024, nullptr, log);
         die("failed to compile %s shader:\n%s",
-            shader_type_to_string(type), log);
+            shaderTypeToString(type), log);
     }
     return sh;
 }
 
-void link_program(GLuint prog)
+void linkProgram(GLuint prog)
 {
     GLint su = 0;
     glLinkProgram(prog);

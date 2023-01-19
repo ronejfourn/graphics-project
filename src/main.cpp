@@ -5,9 +5,9 @@
 #include "shader.hpp"
 #include "math.hpp"
 
-mat4 projection;
+Mat4 projection;
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     /*
      * NOTE(rijan):
@@ -17,7 +17,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
      *    projection[0][0] = 1 / aspect_ratio
      */
 
-    projection[0][0] = (float)height / (float)width;
+    projection[0][0] = (f32)height / (f32)width;
     glViewport(0, 0, width, height);
     (void)window;
 }
@@ -41,9 +41,9 @@ int main()
 
     printf("Vendor: %s\nVersion: %s\nRenderer: %s\n", glGetString(GL_VENDOR), glGetString(GL_VERSION), glGetString(GL_RENDERER));
 
-    glfwSetFramebufferSizeCallback(win, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
 
-    float verts[] = {
+    f32 verts[] = {
          0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f, //0
          0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, //1
          0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, //2
@@ -80,13 +80,13 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indxs), indxs, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)(0));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)(3 * sizeof(f32)));
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    const char * vert_shader_src = R"vsh(
+    const char * vertShaderSrc = R"vsh(
         #version 330 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aCol;
@@ -98,7 +98,7 @@ int main()
         }
     )vsh";
 
-    const char * frag_shader_src = R"fsh(
+    const char * fragShaderSrc = R"fsh(
         #version 330 core
         in vec3 vCol;
         out vec4 fCol;
@@ -107,45 +107,45 @@ int main()
         }
     )fsh";
 
-    u32 vsh = compile_shader(GL_VERTEX_SHADER  , vert_shader_src);
-    u32 fsh = compile_shader(GL_FRAGMENT_SHADER, frag_shader_src);
+    u32 vsh = compileShader(GL_VERTEX_SHADER  , vertShaderSrc);
+    u32 fsh = compileShader(GL_FRAGMENT_SHADER, fragShaderSrc);
 
     u32 prog = glCreateProgram();
     glAttachShader(prog, vsh);
     glAttachShader(prog, fsh);
-    link_program(prog);
+    linkProgram(prog);
 
     glClearColor(.18f, .18f, .18f, .18f);
     glUseProgram(prog);
     glBindVertexArray(vao);
     glEnable(GL_DEPTH_TEST);
 
-    GLuint u_mvp = glGetUniformLocation(prog, "mvp");
-    float a = 0;
+    GLuint uMVP = glGetUniformLocation(prog, "mvp");
+    f32 a = 0;
 
-    projection = mat4_perspective(0.01f, 1000, 90, 1);
+    projection = mat4Perspective(0.01f, 1000, 90, 1);
 
     glfwSwapInterval(1); // vsync on for now
 
     while (!glfwWindowShouldClose(win)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float c = cosf(a);
-        float s = sinf(a);
+        f32 c = cosf(a);
+        f32 s = sinf(a);
         a += 0.01f;
         if (a > 2 * PI)
             a = 0;
 
-        mat4 rotX = mat4_rotation_x(c, s);
-        mat4 rotY = mat4_rotation_y(c, s);
-        mat4 rotZ = mat4_rotation_z(c, s);
-        mat4 trns = mat4_translation(0, 0, 3);
+        Mat4 rotX = mat4RotationX(c, s);
+        Mat4 rotY = mat4RotationY(c, s);
+        Mat4 rotZ = mat4RotationZ(c, s);
+        Mat4 trns = mat4Translation(0, 0, 3);
 
-        mat4 view; // TODO
+        Mat4 view; // TODO
 
-        mat4 model = trns * rotZ * rotY * rotX;
-        mat4 mvp = projection * view * model;
-        glUniformMatrix4fv(u_mvp , 1, GL_TRUE, &mvp[0][0]);
+        Mat4 model = trns * rotZ * rotY * rotX;
+        Mat4 mvp = projection * view * model;
+        glUniformMatrix4fv(uMVP, 1, GL_TRUE, &mvp[0][0]);
         glDrawElements(GL_TRIANGLES, sizeof(indxs) / sizeof(indxs[0]), GL_UNSIGNED_INT, (void*)0);
 
         glfwSwapBuffers(win);

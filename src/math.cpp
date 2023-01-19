@@ -4,32 +4,32 @@
 // vec4
 //
 
-float dot(const vec4& a, const vec4& b)
+f32 dot(const Vec4& a, const Vec4& b)
 {
-    vec4 c = a * b;
+    Vec4 c = a * b;
     return c.x + c.y + c.z + c.w;
 }
 
-vec4 cross(const vec4& a, const vec4& b)
+Vec4 cross(const Vec4& a, const Vec4& b)
 {
-    vec4 c;
+    Vec4 c;
     c.x = a.y * b.z - b.y * a.z;
     c.y = a.z * b.x - b.z * a.x;
     c.z = a.x * b.y - b.x * a.y;
     return c;
 }
 
-vec4 operator+ (const vec4& a, const vec4& b) {return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};}
-vec4 operator- (const vec4& a, const vec4& b) {return {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};}
-vec4 operator* (const vec4& a, const vec4& b) {return {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};}
-vec4 operator/ (const vec4& a, const vec4& b) {return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};}
-vec4 operator* (const vec4& a, const float b) {return a * vec4(b);}
-vec4 operator* (const float b, const vec4& a) {return a * vec4(b);}
-vec4 operator/ (const vec4& a, const float b) {return a / vec4(b);}
+Vec4 operator+ (const Vec4& a, const Vec4& b) {return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};}
+Vec4 operator- (const Vec4& a, const Vec4& b) {return {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};}
+Vec4 operator* (const Vec4& a, const Vec4& b) {return {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};}
+Vec4 operator/ (const Vec4& a, const Vec4& b) {return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};}
+Vec4 operator* (const Vec4& a, const f32 b) {return a * Vec4(b);}
+Vec4 operator* (const f32 b, const Vec4& a) {return a * Vec4(b);}
+Vec4 operator/ (const Vec4& a, const f32 b) {return a / Vec4(b);}
 
-vec4 operator* (const vec4& a, const mat4& b)
+Vec4 operator* (const Vec4& a, const Mat4& b)
 {
-    vec4 x, y, z, w;
+    Vec4 x, y, z, w;
     x = a.x * b[0];
     y = a.y * b[1];
     z = a.z * b[2];
@@ -37,18 +37,18 @@ vec4 operator* (const vec4& a, const mat4& b)
     return x + y + z + w;
 }
 
-vec4& operator+= (vec4& a, const vec4& b) {a = a + b; return a;};
-vec4& operator-= (vec4& a, const vec4& b) {a = a - b; return a;};
-vec4& operator*= (vec4& a, const vec4& b) {a = a * b; return a;};
-vec4& operator/= (vec4& a, const vec4& b) {a = a / b; return a;};
-vec4& operator*= (vec4& a, const float b) {a = a * b; return a;};
-vec4& operator/= (vec4& a, const float b) {a = a / b; return a;};
+Vec4& operator+= (Vec4& a, const Vec4& b) {a = a + b; return a;};
+Vec4& operator-= (Vec4& a, const Vec4& b) {a = a - b; return a;};
+Vec4& operator*= (Vec4& a, const Vec4& b) {a = a * b; return a;};
+Vec4& operator/= (Vec4& a, const Vec4& b) {a = a / b; return a;};
+Vec4& operator*= (Vec4& a, const f32 b) {a = a * b; return a;};
+Vec4& operator/= (Vec4& a, const f32 b) {a = a / b; return a;};
 
 //
 // mat4
 //
 
-mat4 mat4_identity()
+Mat4 mat4Identity()
 {
     return {
         {1, 0, 0, 0},
@@ -58,7 +58,7 @@ mat4 mat4_identity()
     };
 }
 
-mat4 mat4_translation(float x, float y, float z)
+Mat4 mat4Translation(f32 x, f32 y, f32 z)
 {
     return {
         {1, 0, 0, x},
@@ -68,14 +68,14 @@ mat4 mat4_translation(float x, float y, float z)
     };
 }
 
-mat4 mat4_perspective(float zn, float zf, float fov, float ar)
+Mat4 mat4Perspective(f32 zn, f32 zf, f32 fov, f32 ar)
 {
-    float zr = zn - zf;
-    float a = DEG2RAD(fov / 2);
-    float y = 1 / tanf(a);
-    float x = y / ar;
-    float p = - (zn + zf) / zr;
-    float q = 2 * zn * zf / zr;
+    f32 zr = zn - zf;
+    f32 a = DEG2RAD(fov / 2);
+    f32 y = 1 / tanf(a);
+    f32 x = y / ar;
+    f32 p = - (zn + zf) / zr;
+    f32 q = 2 * zn * zf / zr;
     return {
         {x, 0, 0, 0},
         {0, y, 0, 0},
@@ -84,11 +84,11 @@ mat4 mat4_perspective(float zn, float zf, float fov, float ar)
     };
 }
 
-mat4 mat4_rotation_x(float a) {return mat4_rotation_x(cosf(a), sinf(a));}
-mat4 mat4_rotation_y(float a) {return mat4_rotation_y(cosf(a), sinf(a));}
-mat4 mat4_rotation_z(float a) {return mat4_rotation_z(cosf(a), sinf(a));}
+Mat4 mat4RotationX(f32 a) {return mat4RotationX(cosf(a), sinf(a));}
+Mat4 mat4RotationY(f32 a) {return mat4RotationY(cosf(a), sinf(a));}
+Mat4 mat4RotationZ(f32 a) {return mat4RotationZ(cosf(a), sinf(a));}
 
-mat4 mat4_rotation_x(float c, float s)
+Mat4 mat4RotationX(f32 c, f32 s)
 {
     return {
         {1, 0,  0, 0},
@@ -98,7 +98,7 @@ mat4 mat4_rotation_x(float c, float s)
     };
 }
 
-mat4 mat4_rotation_y(float c, float s)
+Mat4 mat4RotationY(f32 c, f32 s)
 {
     return {
         {c, 0, -s, 0},
@@ -108,7 +108,7 @@ mat4 mat4_rotation_y(float c, float s)
     };
 }
 
-mat4 mat4_rotation_z(float c, float s)
+Mat4 mat4RotationZ(f32 c, f32 s)
 {
     return {
         {c, -s, 0, 0},
@@ -118,15 +118,15 @@ mat4 mat4_rotation_z(float c, float s)
     };
 }
 
-mat4 operator+ (const mat4& a, const mat4& b) {return {a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]};}
-mat4 operator- (const mat4& a, const mat4& b) {return {a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]};}
-mat4 operator* (const mat4& a, const float b) {return {a[0] * b   , a[1] * b   , a[2] * b   , a[3] * b   };}
-mat4 operator* (const float b, const mat4& a) {return {a[0] * b   , a[1] * b   , a[2] * b   , a[3] * b   };}
-mat4 operator/ (const mat4& a, const float b) {return {a[0] / b   , a[1] / b   , a[2] / b   , a[3] / b   };}
+Mat4 operator+ (const Mat4& a, const Mat4& b) {return {a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]};}
+Mat4 operator- (const Mat4& a, const Mat4& b) {return {a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]};}
+Mat4 operator* (const Mat4& a, const f32 b) {return {a[0] * b, a[1] * b, a[2] * b, a[3] * b};}
+Mat4 operator* (const f32 b, const Mat4& a) {return {a[0] * b, a[1] * b, a[2] * b, a[3] * b};}
+Mat4 operator/ (const Mat4& a, const f32 b) {return {a[0] / b, a[1] / b, a[2] / b, a[3] / b};}
 
-mat4 operator* (const mat4& a, const mat4& b)
+Mat4 operator* (const Mat4& a, const Mat4& b)
 {
-    mat4 c;
+    Mat4 c;
     c[0] = a[0] * b;
     c[1] = a[1] * b;
     c[2] = a[2] * b;
@@ -134,7 +134,7 @@ mat4 operator* (const mat4& a, const mat4& b)
     return c;
 }
 
-vec4 operator* (const mat4& a, const vec4& b)
+Vec4 operator* (const Mat4& a, const Vec4& b)
 {
     return {
         dot(a[0], b),
@@ -144,8 +144,8 @@ vec4 operator* (const mat4& a, const vec4& b)
     };
 }
 
-mat4& operator+= (mat4& a, const mat4& b) {a = a + b; return a;}
-mat4& operator-= (mat4& a, const mat4& b) {a = a - b; return a;}
-mat4& operator*= (mat4& a, const mat4& b) {a = a * b; return a;}
-mat4& operator*= (mat4& a, const float b) {a = a * b; return a;}
-mat4& operator/= (mat4& a, const float b) {a = a / b; return a;}
+Mat4& operator+= (Mat4& a, const Mat4& b) {a = a + b; return a;}
+Mat4& operator-= (Mat4& a, const Mat4& b) {a = a - b; return a;}
+Mat4& operator*= (Mat4& a, const Mat4& b) {a = a * b; return a;}
+Mat4& operator*= (Mat4& a, const f32 b) {a = a * b; return a;}
+Mat4& operator/= (Mat4& a, const f32 b) {a = a / b; return a;}
