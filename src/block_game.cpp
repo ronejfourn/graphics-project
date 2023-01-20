@@ -1,47 +1,24 @@
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <stdio.h>
+#include "platform.hpp"
 #include "common.hpp"
 #include "shader.hpp"
 #include "math.hpp"
+#include "events.hpp"
 
-Mat4 projection;
+// TODO better error messages
 
-void framebufferSizeCallback(GLFWwindow *window, int width, int height)
+int blockGame(const Events &events)
 {
-    /*
-     * NOTE(rijan):
-     *    for perspective projection,
-     *    projection[0][0] = 1 / (tan(half_FOV) * aspect_ratio)
-     *    if FOV = 90 degrees, tan(half_FOV) = 1 so,
-     *    projection[0][0] = 1 / aspect_ratio
-     */
+    if (!plInitialize()) {
+        plTerminate();
+        die ("initialization failed");
+    }
 
-    projection[0][0] = (f32)height / (f32)width;
-    glViewport(0, 0, width, height);
-    (void)window;
-}
-
-int main()
-{
-    if (!glfwInit())
-        die("failed to init glfw");
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow *win = glfwCreateWindow(800, 800, "GLFW Window", NULL, NULL);
-    if (!win)
-        die ("failed to create glfw window");
-    glfwMakeContextCurrent(win);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if (!gladLoadGL())
         die("failed to init glad");
 
     printf("Vendor: %s\nVersion: %s\nRenderer: %s\n", glGetString(GL_VENDOR), glGetString(GL_VERSION), glGetString(GL_RENDERER));
-
-    glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
 
     f32 verts[] = {
          0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f, //0
@@ -102,8 +79,15 @@ int main()
         #version 330 core
         in vec3 vCol;
         out vec4 fCol;
+        uniform int mx;
+        uniform int my;
         void main() {
-            fCol = vec4(vCol, 1.0f);
+            float dx = gl_FragCoord.x - mx;
+            float dy = gl_FragCoord.y - my;
+            if (dx * dx + dy * dy < 4000)
+                fCol = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+            else
+                fCol = vec4(vCol, 1.0f);
         }
     )fsh";
 
@@ -120,15 +104,36 @@ int main()
     glBindVertexArray(vao);
     glEnable(GL_DEPTH_TEST);
 
+    GLuint umx  = glGetUniformLocation(prog, "mx");
+    GLuint umy  = glGetUniformLocation(prog, "my");
     GLuint uMVP = glGetUniformLocation(prog, "mvp");
     f32 a = 0;
 
-    projection = mat4Perspective(0.01f, 1000, 90, 1);
+    Mat4 projection = mat4Perspective(0.01f, 1000, 90, 1);
 
-    glfwSwapInterval(1); // vsync on for now
+    plSwapInterval(1); // vsync on for now
 
-    while (!glfwWindowShouldClose(win)) {
+    while (!events.shouldClose) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (events.keyPressed(KEY_RETURN))
+            printf("pressed enter\n");
+
+        if (events.keyReleased(KEY_RETURN))
+            printf("released enter\n");
+
+        if (events.keyHeld(KEY_UP))
+            printf("held up\n");
+
+        if (events.window.resized) {
+            /* NOTE(rijan): */
+            /*    for perspective projection, */
+            /*    projection[0][0] = 1 / (tan(FOV / 2) * aspect_ratio) */
+            /*    if FOV = 90 degrees, tan(FOV / 2) = 1 so, */
+            /*    projection[0][0] = 1 / aspect_ratio */
+            glViewport(0, 0, events.window.w, events.window.h);
+            projection[0][0] = (f32)events.window.h / (f32)events.window.w;
+        }
 
         f32 c = cosf(a);
         f32 s = sinf(a);
@@ -139,18 +144,22 @@ int main()
         Mat4 rotX = mat4RotationX(c, s);
         Mat4 rotY = mat4RotationY(c, s);
         Mat4 rotZ = mat4RotationZ(c, s);
-        Mat4 trns = mat4Translation(0, 0, 3);
+        Mat4 trns = mat4Translation(0, 0, 1.5);
 
         Mat4 view; // TODO
 
         Mat4 model = trns * rotZ * rotY * rotX;
         Mat4 mvp = projection * view * model;
         glUniformMatrix4fv(uMVP, 1, GL_TRUE, &mvp[0][0]);
+        glUniform1i(umx, events.cursor.x);
+        glUniform1i(umy, events.cursor.y);
         glDrawElements(GL_TRIANGLES, sizeof(indxs) / sizeof(indxs[0]), GL_UNSIGNED_INT, (void*)0);
 
-        glfwSwapBuffers(win);
-        glfwPollEvents();
+        plSwapBuffers();
+        plPollEvents();
     }
+
+    plTerminate();
 
     return 0;
 }
