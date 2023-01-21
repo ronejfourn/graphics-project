@@ -5,6 +5,7 @@
 #include "shader.hpp"
 #include "math.hpp"
 #include "events.hpp"
+#include "texture.hpp"
 
 // TODO better error messages
 
@@ -21,26 +22,27 @@ int blockGame(const Events &events)
     printf("Vendor: %s\nVersion: %s\nRenderer: %s\n", glGetString(GL_VENDOR), glGetString(GL_VERSION), glGetString(GL_RENDERER));
 
     f32 verts[] = {
-         0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f, //0
-         0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, //1
-         0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, //2
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, //3
+        // coordinates          /        colors           /     texturelocation
+         0.5f,  0.5f,  0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f, // 0
+         0.5f,  0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f, // 1
+         0.5f, -0.5f,  0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 0.0f, 0.0f, // 2
+         0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 1.0f, 0.0f, // 3
 
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f, //4
-        -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f, //5
-        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f, //6
-        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, //7
+        -0.5f,  0.5f,  0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 1.0f, 1.0f, // 4
+        -0.5f,  0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 0.0f, 1.0f, // 5
+        -0.5f, -0.5f,  0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f, // 6
+        -0.5f, -0.5f, -0.5f, /*****/ 1.0f, 1.0f, 1.0f, /*****/ 1.0f, 1.0f, // 7
     };
 
     GLuint indxs[] = {
-        0, 1, 3,  0, 2, 3,
-        4, 5, 7,  4, 6, 7,
+        0, 1, 3,   0, 2, 3,
+        4, 5, 7,   4, 6, 7,
 
-        0, 1, 5,  0, 4, 5,
-        2, 3, 7,  2, 6, 7,
+        0, 1, 5,   0, 4, 5,
+        2, 3, 7,   2, 6, 7,
 
-        0, 4, 6,  0, 2, 6,
-        1, 5, 7,  1, 3, 7,
+        0, 4, 6,   0, 2, 6,
+        1, 5, 7,   1, 3, 7,
     };
 
     u32 vao;
@@ -57,36 +59,44 @@ int blockGame(const Events &events)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indxs), indxs, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)(0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)(3 * sizeof(f32)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void *)(0));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void *)(3 * sizeof(f32)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void *)(6 * sizeof(float)));
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
-    const char * vertShaderSrc = R"vsh(
+    const char *vertShaderSrc = R"vsh(
         #version 330 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aCol;
+        layout (location = 2) in vec2 aTexCoord;
+
         out vec3 vCol;
+        out vec2 TexCoord;
         uniform mat4 mvp;
         void main() {
             gl_Position = mvp * vec4(aPos, 1.0f);;
             vCol = aCol;
+            TexCoord=aTexCoord;
         }
     )vsh";
 
-    const char * fragShaderSrc = R"fsh(
+    const char *fragShaderSrc = R"fsh(
         #version 330 core
         in vec3 vCol;
+        in vec2 TexCoord;
         out vec4 fCol;
+
         uniform int mx;
         uniform int my;
+        uniform sampler2D ourTexture;
         void main() {
+            fCol=texture(ourTexture,TexCoord);
             float dx = gl_FragCoord.x - mx;
             float dy = gl_FragCoord.y - my;
             if (dx * dx + dy * dy < 4000)
-                fCol = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-            else
                 fCol = vec4(vCol, 1.0f);
         }
     )fsh";
@@ -112,6 +122,16 @@ int blockGame(const Events &events)
     Mat4 projection = mat4Perspective(0.01f, 1000, 90, 1);
 
     plSwapInterval(1); // vsync on for now
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    // Texture [Risav]
+
+    Texture2D mytexture;
+    if (!mytexture.setImageFromFile("../resources/minecraft.png"))
+        die("failed to set texture image");
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     while (!events.shouldClose) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -150,16 +170,18 @@ int blockGame(const Events &events)
 
         Mat4 model = trns * rotZ * rotY * rotX;
         Mat4 mvp = projection * view * model;
+
         glUniformMatrix4fv(uMVP, 1, GL_TRUE, &mvp[0][0]);
         glUniform1i(umx, events.cursor.x);
         glUniform1i(umy, events.cursor.y);
-        glDrawElements(GL_TRIANGLES, sizeof(indxs) / sizeof(indxs[0]), GL_UNSIGNED_INT, (void*)0);
+        mytexture.bind();
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, sizeof(indxs) / sizeof(indxs[0]), GL_UNSIGNED_INT, (void *)0);
 
         plSwapBuffers();
         plPollEvents();
     }
 
     plTerminate();
-
     return 0;
 }

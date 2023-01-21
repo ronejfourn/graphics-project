@@ -7,6 +7,7 @@
 #define DEFAULT_WINDOW_HEIGHT 720
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
 
