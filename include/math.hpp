@@ -33,10 +33,15 @@ union Vec4
     }
 };
 
+//Rohan: added magnitude & normalize & unary minus & mat4 lookAt
+f32 squareMagnitude(const Vec4& a);
+f32 magnitude(const Vec4& a);
 f32  dot  (const Vec4& a, const Vec4& b);
 Vec4 cross(const Vec4& a, const Vec4& b);
+Vec4 normalize(const Vec4 a);
 Vec4 operator+ (const Vec4& a, const Vec4& b);
 Vec4 operator- (const Vec4& a, const Vec4& b);
+Vec4 operator- (const Vec4& a);
 Vec4 operator* (const Vec4& a, const Vec4& b);
 Vec4 operator/ (const Vec4& a, const Vec4& b);
 Vec4 operator* (const Vec4& a, const f32 b);
@@ -94,6 +99,7 @@ Mat4 mat4RotationZ(f32 angle);
 Mat4 mat4RotationX(f32 cosOfAngle, f32 sinOfAngle);
 Mat4 mat4RotationY(f32 cosOfAngle, f32 sinOfAngle);
 Mat4 mat4RotationZ(f32 cosOfAngle, f32 sinOfAngle);
+Mat4 lookAt(Vec4 position, Vec4 target, Vec4 up);
 
 Mat4 operator+ (const Mat4& a, const Mat4& b);
 Mat4 operator- (const Mat4& a, const Mat4& b);

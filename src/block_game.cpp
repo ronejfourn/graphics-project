@@ -6,6 +6,7 @@
 #include "math.hpp"
 #include "events.hpp"
 #include "texture.hpp"
+#include "camera.hpp"
 
 // TODO better error messages
 
@@ -119,8 +120,6 @@ int blockGame(const Events &events)
     GLuint uMVP = glGetUniformLocation(prog, "mvp");
     f32 a = 0;
 
-    Mat4 projection = mat4Perspective(0.01f, 1000, 90, 1);
-
     plSwapInterval(1); // vsync on for now
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -133,6 +132,8 @@ int blockGame(const Events &events)
 
     ////////////////////////////////////////////////////////////////////////////////
 
+    Camera cam;
+
     while (!events.shouldClose) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -142,17 +143,29 @@ int blockGame(const Events &events)
         if (events.keyReleased(KEY_RETURN))
             printf("released enter\n");
 
-        if (events.keyHeld(KEY_UP))
-            printf("held up\n");
+        u32 direction = 0;
+        if (events.keyHeld(KEY_W))
+            direction |= FORWARD;
+        if (events.keyHeld(KEY_A))
+            direction |= LEFT;
+        if (events.keyHeld(KEY_S))
+            direction |= BACKWARD;
+        if (events.keyHeld(KEY_D))
+            direction |= RIGHT;
+        cam.processKeyboard((CameraMovement)direction, 0.02f);
+
+        if (events.keyHeld(KEY_H))
+            cam.processMouseMovement(-0.5,  0);
+        if (events.keyHeld(KEY_J))
+            cam.processMouseMovement( 0, -0.5);
+        if (events.keyHeld(KEY_K))
+            cam.processMouseMovement( 0,  0.5);
+        if (events.keyHeld(KEY_L))
+            cam.processMouseMovement( 0.5,  0);
 
         if (events.window.resized) {
-            /* NOTE(rijan): */
-            /*    for perspective projection, */
-            /*    projection[0][0] = 1 / (tan(FOV / 2) * aspect_ratio) */
-            /*    if FOV = 90 degrees, tan(FOV / 2) = 1 so, */
-            /*    projection[0][0] = 1 / aspect_ratio */
+            cam.setAspectRatio((float)events.window.w / (float)events.window.h);
             glViewport(0, 0, events.window.w, events.window.h);
-            projection[0][0] = (f32)events.window.h / (f32)events.window.w;
         }
 
         f32 c = cosf(a);
@@ -164,12 +177,13 @@ int blockGame(const Events &events)
         Mat4 rotX = mat4RotationX(c, s);
         Mat4 rotY = mat4RotationY(c, s);
         Mat4 rotZ = mat4RotationZ(c, s);
-        Mat4 trns = mat4Translation(0, 0, 1.5);
+        Mat4 trns = mat4Translation(0, 0, 0);
 
-        Mat4 view; // TODO
+        Mat4 proj = cam.getProjectionMatrix();
+        Mat4 view = cam.getViewMatrix();
 
-        Mat4 model = trns * rotZ * rotY * rotX;
-        Mat4 mvp = projection * view * model;
+        Mat4 model = trns;
+        Mat4 mvp = proj * view * model;
 
         glUniformMatrix4fv(uMVP, 1, GL_TRUE, &mvp[0][0]);
         glUniform1i(umx, events.cursor.x);

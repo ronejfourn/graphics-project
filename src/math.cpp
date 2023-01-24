@@ -4,10 +4,22 @@
 // vec4
 //
 
+f32 squareMagnitude(const Vec4& a) {
+    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+f32 magnitude(const Vec4& a){
+    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
 f32 dot(const Vec4& a, const Vec4& b)
 {
     Vec4 c = a * b;
     return c.x + c.y + c.z + c.w;
+}
+
+Vec4 normalize(Vec4 a){
+    return a / magnitude(a);
 }
 
 Vec4 cross(const Vec4& a, const Vec4& b)
@@ -21,6 +33,7 @@ Vec4 cross(const Vec4& a, const Vec4& b)
 
 Vec4 operator+ (const Vec4& a, const Vec4& b) {return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};}
 Vec4 operator- (const Vec4& a, const Vec4& b) {return {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};}
+Vec4 operator- (const Vec4& a ) {return { -a.x , -a.y , -a.z , -a.w };}
 Vec4 operator* (const Vec4& a, const Vec4& b) {return {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};}
 Vec4 operator/ (const Vec4& a, const Vec4& b) {return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};}
 Vec4 operator* (const Vec4& a, const f32 b) {return a * Vec4(b);}
@@ -116,6 +129,21 @@ Mat4 mat4RotationZ(f32 c, f32 s)
         {0,  0, 1, 0},
         {0,  0, 0, 1},
     };
+}
+
+//lookAt function
+Mat4 lookAt(Vec4 position, Vec4 front, Vec4 up){
+    position.w = 0;
+    Vec4 f = normalize(front);
+    Vec4 r = normalize(cross(up,f));
+    Vec4 u = cross(f,r);
+    Mat4 view={
+        Vec4(r.x, r.y, r.z, -dot(r,position)),
+        Vec4(u.x, u.y, u.z, -dot(u,position)),
+        Vec4(f.x, f.y, f.z, -dot(f,position)),
+        Vec4(  0,   0,   0,                1),
+    };
+    return view;
 }
 
 Mat4 operator+ (const Mat4& a, const Mat4& b) {return {a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]};}
