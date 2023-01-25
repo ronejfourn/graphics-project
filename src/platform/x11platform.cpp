@@ -29,20 +29,22 @@ static glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
 typedef void (*glXSwapIntervalEXTProc)(Display *dpy, GLXDrawable drawable, int interval);
 static glXSwapIntervalEXTProc glXSwapIntervalEXT;
 
-bool plInitialize()
+void Platform::_init()
 {
     if (X11.init)
-        return true;
+        return;
 
     X11.dpy = XOpenDisplay(NULL);
-    if (!X11.dpy) return false;
+    if (!X11.dpy)
+        die("X11: failed to open display");
 
     i32 scr = DefaultScreen(X11.dpy);
     bool ok;
     int maj = 0, min = 0;
     ok = glXQueryVersion(X11.dpy, &maj, &min);
     ok &= (maj > 1) || (maj == 1 && min >= 4);
-    if (!ok) return false;
+    if (!ok)
+        die("need GLX version >= 1.4");
 
     int fba[] = {
         GLX_X_RENDERABLE , 1,
@@ -61,7 +63,8 @@ bool plInitialize()
 
     int n;
     GLXFBConfig *fbcp = glXChooseFBConfig(X11.dpy, scr, fba, &n);
-    if (!fbcp) return false;
+    if (!fbcp)
+        die("GLX: no matching FB config found");
     GLXFBConfig fbc = fbcp[0];
     XFree(fbcp);
 
@@ -79,7 +82,8 @@ bool plInitialize()
 
     X11.win = XCreateWindow(X11.dpy, root, 0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
             0, vi.depth, InputOutput, vi.visual, cwm, &swa);
-    if (!X11.win) return false;
+    if (!X11.win)
+        die("X11: could not create window");
 
     XTextProperty tp;
     char *t = (char*)PROJECT_TITLE;
@@ -97,7 +101,7 @@ bool plInitialize()
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)
         glXGetProcAddress((const GLubyte *)"glXCreateContextAttribsARB");
     if (!glXCreateContextAttribsARB)
-        return false;
+        die("GLX: glXCreateContextAttribsARB not found");
 
     int ca[] = {
         GLX_CONTEXT_MAJOR_VERSION_ARB, OPENGL_VERSION_MAJOR,
@@ -108,18 +112,17 @@ bool plInitialize()
 
     X11.ctx = glXCreateContextAttribsARB(X11.dpy, fbc, 0, True, ca);
     XSync(X11.dpy, False);
-    if (!X11.ctx) return false;
+    if (!X11.ctx)
+        die("GLX: could not create context");
 
     glXMakeCurrent(X11.dpy, X11.win, X11.ctx);
 
     XMapWindow(X11.dpy, X11.win);
     XSync(X11.dpy, False);
     X11.init = true;
-
-    return true;
 }
 
-void plTerminate()
+void Platform::_destroy()
 {
     if (X11.dpy) {
         if (X11.ctx) {
@@ -135,17 +138,10 @@ void plTerminate()
     X11.init = false;
 }
 
-void plSwapBuffers()
-{
-    ASSERT(X11.init, "X11 not initialized");
-    glXSwapBuffers(X11.dpy, X11.win);
-}
-
-void plPollEvents()
+void Platform::_pollEvents()
 {
     ASSERT(X11.init, "X11 not initialized");
     XEvent xe;
-    ev.advance();
     XPending(X11.dpy);
 
     while(QLength(X11.dpy)) {
@@ -156,7 +152,7 @@ void plPollEvents()
         switch(xe.type) {
             case KeyPress:
                 key = translateKeyEvent(&xe.xkey);
-                ev.keyStates[key] = BITSET(ev.keyStates[key], 0);
+                events.keyStates[key] = BITSET(events.keyStates[key], 0);
                 break;
             case KeyRelease:
                 key = translateKeyEvent(&xe.xkey);
@@ -167,43 +163,49 @@ void plPollEvents()
                         if (nxt.xkey.time - xe.xkey.time < 20)
                             break;
                 }
-                ev.keyStates[key] = BITRESET(ev.keyStates[key], 0);
+                events.keyStates[key] = BITRESET(events.keyStates[key], 0);
                 break;
             case ButtonPress:
                 if (xe.xbutton.button <= 3) {
                     btn = xe.xbutton.button - 1;
-                    ev.btnStates[btn] = BITSET(ev.btnStates[btn], 0);
+                    events.btnStates[btn] = BITSET(events.btnStates[btn], 0);
                 } else if (xe.xbutton.button == 4) {
-                        ev.wheel =  1;
+                        events.wheel =  1;
                 } else if (xe.xbutton.button == 5) {
-                        ev.wheel = -1;
+                        events.wheel = -1;
                 }
                 break;
             case ButtonRelease:
                 if (xe.xbutton.button <= 3) {
                     btn = xe.xbutton.button - 1;
-                    ev.btnStates[btn] = BITRESET(ev.btnStates[btn], 0);
+                    events.btnStates[btn] = BITRESET(events.btnStates[btn], 0);
                 }
                 break;
             case MotionNotify:
-                ev.cursor.x = xe.xmotion.x;
-                ev.cursor.y = ev.window.h - xe.xmotion.y;
+                events.cursor.x = xe.xmotion.x;
+                events.cursor.y = events.window.h - xe.xmotion.y;
                 break;
             case ConfigureNotify:
-                if (ev.window.w != xe.xconfigure.width || ev.window.h != xe.xconfigure.height) {
-                    ev.window.resized = true;
-                    ev.window.w = xe.xconfigure.width;
-                    ev.window.h = xe.xconfigure.height;
+                if (events.window.w != xe.xconfigure.width || events.window.h != xe.xconfigure.height) {
+                    events.window.resized = true;
+                    events.window.w = xe.xconfigure.width;
+                    events.window.h = xe.xconfigure.height;
                 }
                 break;
             case ClientMessage:
-                ev.shouldClose = true;
+                events.quit = true;
                 break;
         }
     }
 }
 
-void plSwapInterval(i32 i)
+void Platform::_swapBuffers()
+{
+    ASSERT(X11.init, "X11 not initialized");
+    glXSwapBuffers(X11.dpy, X11.win);
+}
+
+void Platform::_swapInterval(i32 i)
 {
     ASSERT(X11.init, "X11 not initialized");
     glXSwapIntervalEXT(X11.dpy, X11.win, i);
@@ -215,24 +217,24 @@ static int translateKeyEvent(XKeyEvent *ke)
 
     switch (ks)
     {
-        case XK_A: return KEY_A;  case XK_B: return KEY_B;
-        case XK_C: return KEY_C;  case XK_D: return KEY_D;
-        case XK_E: return KEY_E;  case XK_F: return KEY_F;
-        case XK_G: return KEY_G;  case XK_H: return KEY_H;
-        case XK_I: return KEY_I;  case XK_J: return KEY_J;
-        case XK_K: return KEY_K;  case XK_L: return KEY_L;
-        case XK_M: return KEY_M;  case XK_N: return KEY_N;
-        case XK_O: return KEY_O;  case XK_P: return KEY_P;
-        case XK_Q: return KEY_Q;  case XK_R: return KEY_R;
-        case XK_S: return KEY_S;  case XK_T: return KEY_T;
-        case XK_U: return KEY_U;  case XK_V: return KEY_V;
-        case XK_W: return KEY_W;  case XK_X: return KEY_X;
-        case XK_Y: return KEY_Y;  case XK_Z: return KEY_Z;
-        case XK_0: return KEY_K0; case XK_1: return KEY_K1;
-        case XK_2: return KEY_K2; case XK_3: return KEY_K3;
-        case XK_4: return KEY_K4; case XK_5: return KEY_K5;
-        case XK_6: return KEY_K6; case XK_7: return KEY_K7;
-        case XK_8: return KEY_K8; case XK_9: return KEY_K9;
+        case XK_A: return KEY_A; case XK_B: return KEY_B;
+        case XK_C: return KEY_C; case XK_D: return KEY_D;
+        case XK_E: return KEY_E; case XK_F: return KEY_F;
+        case XK_G: return KEY_G; case XK_H: return KEY_H;
+        case XK_I: return KEY_I; case XK_J: return KEY_J;
+        case XK_K: return KEY_K; case XK_L: return KEY_L;
+        case XK_M: return KEY_M; case XK_N: return KEY_N;
+        case XK_O: return KEY_O; case XK_P: return KEY_P;
+        case XK_Q: return KEY_Q; case XK_R: return KEY_R;
+        case XK_S: return KEY_S; case XK_T: return KEY_T;
+        case XK_U: return KEY_U; case XK_V: return KEY_V;
+        case XK_W: return KEY_W; case XK_X: return KEY_X;
+        case XK_Y: return KEY_Y; case XK_Z: return KEY_Z;
+        case XK_0: return KEY_0; case XK_1: return KEY_1;
+        case XK_2: return KEY_2; case XK_3: return KEY_3;
+        case XK_4: return KEY_4; case XK_5: return KEY_5;
+        case XK_6: return KEY_6; case XK_7: return KEY_7;
+        case XK_8: return KEY_8; case XK_9: return KEY_9;
         case XK_Up  : return KEY_UP  ; case XK_Down : return KEY_DOWN ;
         case XK_Left: return KEY_LEFT; case XK_Right: return KEY_RIGHT;
         case XK_Return: return KEY_RETURN;

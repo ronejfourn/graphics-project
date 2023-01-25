@@ -10,7 +10,7 @@ Events::Events()
         keyStates[i] = 0;
     for (int i = 0; i < _BTN_TOTAL_; i ++)
         btnStates[i] = 0;
-    shouldClose = false;
+    quit = false;
 }
 
 void Events::advance()

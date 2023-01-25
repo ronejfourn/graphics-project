@@ -29,6 +29,7 @@ typedef double f64;
 #define BITTOGGLE(v, b) (v) ^ (1 << (b))
 
 void die(const char *fmt, ...);
+u8* readEntireFile(const char *fileName, size_t *size);
 
 #ifdef DEBUG
 #define ASSERT(_cond, _msg) assert((_cond) && (_msg))

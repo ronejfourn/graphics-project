@@ -34,7 +34,6 @@ struct Chunk
 
 typedef const void * Bytes;
 
-static u8*   readEntireFile(const char *fileName, size_t *size);
 static u32   correctEndian(u32 a);
 static Bytes getBytes(ByteBuffer *lb, i32 n, i32 *r);
 static bool  getChunk(ByteBuffer *b, Chunk* c, u32 type);
@@ -604,27 +603,4 @@ u32 huffmanDecode(ByteBuffer *idat, ByteBuffer *b, Huffman *h)
         code <<= 1;
     }
     return -1;
-}
-
-static u8 *readEntireFile(const char *fileName, size_t *size)
-{
-    *size = 0;
-    u8 * bf = nullptr;
-    FILE *fp = fopen(fileName, "rb");
-    if (!fp) { return nullptr; }
-    fseek(fp, 0, SEEK_END);
-    i32 sz = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    if (sz == -1) {
-        fclose(fp);
-        return nullptr;
-    }
-    bf = (u8*)calloc(sz + 1, 1);
-    if (!bf) {
-        fclose(fp);
-        return nullptr;
-    }
-    fread(bf, 1, sz, fp);
-    *size = sz;
-    return bf;
 }

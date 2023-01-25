@@ -1,15 +1,13 @@
 #pragma once
 
-#include <glad/glad.h>
+#include "common.hpp"
 
 class Texture2D
 {
-private:
-    GLuint m_texture;
 public:
-    Texture2D();
-    ~Texture2D() { glDeleteTextures(1, &m_texture); }
-
-    bool setImageFromFile(const char *path);
+    Texture2D(const char *path);
     void bind();
+    void destroy();
+private:
+    u32 m_texture;
 };

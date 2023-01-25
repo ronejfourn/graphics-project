@@ -84,7 +84,7 @@ Mat4 mat4Translation(f32 x, f32 y, f32 z)
 Mat4 mat4Perspective(f32 zn, f32 zf, f32 fov, f32 ar)
 {
     f32 zr = zn - zf;
-    f32 a = DEG2RAD(fov / 2);
+    f32 a = (float)DEG2RAD(fov / 2);
     f32 y = 1 / tanf(a);
     f32 x = y / ar;
     f32 p = - (zn + zf) / zr;
