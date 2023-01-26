@@ -3,57 +3,85 @@
 #include "glad/glad.h"
 #include <stdio.h>
 
-Game& Game::instance()
+Game &Game::instance()
 {
     static Game s_instance;
     return s_instance;
 }
 
-Game::Game() :
-    m_shader("../shaders/basic.v.glsl", "../shaders/basic.f.glsl"),
+Game::Game() : m_shader("../shaders/basic.v.glsl", "../shaders/basic.f.glsl"),
 
-    ////////////////////////////////////////////////////////////////////////////////
+               ////////////////////////////////////////////////////////////////////////////////
 
-    // Texture [Risav]
-    m_textures{
-       {"../resources/check.png"},
-       {"../resources/check.png"}
-    }
+               // Texture [Risav]
+               m_textures{
+                   {"../resources/minecraft.png"},
+                   {"../resources/Minecraftgrass.png"}}
 
-    ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 {
     f32 verts[] = {
         // coordinates          /        colors           /     texturelocation
-         0.5f,  0.5f,  0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f, // 0
-         0.5f,  0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f, // 1
-         0.5f, -0.5f,  0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 1.0f, 1.0f, // 2
-         0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 0.0f, 1.0f, // 3
+        0.5f, 0.5f, 0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f,   // 0
+        0.5f, 0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f,  // 1
+        0.5f, -0.5f, 0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 1.0f, 1.0f,  // 2
+        0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 0.0f, 1.0f, // 3
 
-        -0.5f,  0.5f,  0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 0.0f, 0.0f, // 4
-        -0.5f,  0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 1.0f, 0.0f, // 5
-        -0.5f, -0.5f,  0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f, // 6
+        -0.5f, 0.5f, 0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 0.0f, 0.0f,   // 4
+        -0.5f, 0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 1.0f, 0.0f,  // 5
+        -0.5f, -0.5f, 0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f,  // 6
         -0.5f, -0.5f, -0.5f, /*****/ 1.0f, 1.0f, 1.0f, /*****/ 1.0f, 1.0f, // 7
 
-         0.5f,  0.5f,  0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f, // 8
-         0.5f,  0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f, // 9
-        -0.5f,  0.5f,  0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 1.0f, 1.0f, // 10
-        -0.5f,  0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 0.0f, 1.0f, // 11
+        0.5f, 0.5f, 0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f,   // 8
+        0.5f, 0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f,  // 9
+        -0.5f, 0.5f, 0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 1.0f, 1.0f,  // 10
+        -0.5f, 0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 0.0f, 1.0f, // 11
 
-         0.5f, -0.5f,  0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 0.0f, 0.0f, // 12
-         0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 1.0f, 0.0f, // 13
-        -0.5f, -0.5f,  0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f, // 14
+        0.5f, -0.5f, 0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 0.0f, 0.0f,   // 12
+        0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 1.0f, 0.0f,  // 13
+        -0.5f, -0.5f, 0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f,  // 14
         -0.5f, -0.5f, -0.5f, /*****/ 1.0f, 1.0f, 1.0f, /*****/ 1.0f, 1.0f, // 15
     };
 
     GLuint indxs[] = {
-        3, 1, 5,   3, 5, 7,
-        6, 4, 0,   6, 0, 2,
+        3,
+        1,
+        5,
+        3,
+        5,
+        7,
+        6,
+        4,
+        0,
+        6,
+        0,
+        2,
 
-        7, 5, 4,   7, 4, 6,
-        2, 0, 1,   2, 1, 3,
+        7,
+        5,
+        4,
+        7,
+        4,
+        6,
+        2,
+        0,
+        1,
+        2,
+        1,
+        3,
 
-        10, 11,  9,  10,  9,  8,
-        15, 14, 12,  15, 12, 13,
+        10,
+        11,
+        9,
+        10,
+        9,
+        8,
+        15,
+        14,
+        12,
+        15,
+        12,
+        13,
     };
 
     glGenVertexArrays(1, &m_vao);
@@ -79,16 +107,17 @@ Game::Game() :
     glBindVertexArray(m_vao);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-
 }
 
-Game::~Game() {
+Game::~Game()
+{
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_ebo);
     glDeleteVertexArrays(1, &m_vao);
 }
 
-void Game::update(Events &events) {
+void Game::update(Events &events)
+{
     u32 direction = 0;
     if (events.keyHeld(KEY_W))
         direction |= FORWARD;
@@ -101,26 +130,28 @@ void Game::update(Events &events) {
     m_camera.processKeyboard((CameraMovement)direction, 0.02f);
 
     if (events.keyHeld(KEY_H))
-        m_camera.processMouseMovement(-0.5,  0);
+        m_camera.processMouseMovement(-0.5, 0);
     if (events.keyHeld(KEY_J))
-        m_camera.processMouseMovement( 0, -0.5);
+        m_camera.processMouseMovement(0, -0.5);
     if (events.keyHeld(KEY_K))
-        m_camera.processMouseMovement( 0,  0.5);
+        m_camera.processMouseMovement(0, 0.5);
     if (events.keyHeld(KEY_L))
-        m_camera.processMouseMovement( 0.5,  0);
+        m_camera.processMouseMovement(0.5, 0);
 
-    if (events.window.resized) {
+    if (events.window.resized)
+    {
         glViewport(0, 0, events.window.w, events.window.h);
         m_camera.setAspectRatio((f32)events.window.w / (f32)events.window.h);
     }
 
-    GLuint umx  = m_shader.uniform("mx");
-    GLuint umy  = m_shader.uniform("my");
+    GLuint umx = m_shader.uniform("mx");
+    GLuint umy = m_shader.uniform("my");
     glUniform1i(umx, events.cursor.x);
     glUniform1i(umy, events.cursor.y);
 }
 
-void Game::render() {
+void Game::render()
+{
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static float a = 0;
