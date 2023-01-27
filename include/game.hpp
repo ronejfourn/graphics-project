@@ -5,6 +5,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "camera.hpp"
+#include "skybox.hpp"
 
 class Game
 {
@@ -18,6 +19,8 @@ private:
     ~Game();
     Shader m_shader;
     Camera m_camera;
+
+    Skybox m_skybox;
     Texture2D m_textures[2];
     u32 m_vao, m_vbo, m_ebo;
 };

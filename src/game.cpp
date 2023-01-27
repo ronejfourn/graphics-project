@@ -9,79 +9,56 @@ Game &Game::instance()
     return s_instance;
 }
 
-Game::Game() : m_shader("../shaders/basic.v.glsl", "../shaders/basic.f.glsl"),
-
-               ////////////////////////////////////////////////////////////////////////////////
-
-               // Texture [Risav]
-               m_textures{
-                   {"../resources/minecraft.png"},
-                   {"../resources/Minecraftgrass.png"}}
-
-////////////////////////////////////////////////////////////////////////////////
+Game::Game() :
+    m_shader("../shaders/basic.v.glsl", "../shaders/basic.f.glsl"),
+    ////////////////////////////////////////////////////////////////////////////////
+    // Texture [Risav]
+    m_textures{
+        {"../resources/minecraft.png"},
+        {"../resources/Minecraftgrass.png"}
+    },
+    m_skybox(
+        "../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl",
+        {
+            "../resources/skybox/right.png",
+            "../resources/skybox/left.png",
+            "../resources/skybox/top.png",
+            "../resources/skybox/bottom.png",
+            "../resources/skybox/front.png",
+            "../resources/skybox/back.png",
+        })
+    ////////////////////////////////////////////////////////////////////////////////
 {
     f32 verts[] = {
         // coordinates          /        colors           /     texturelocation
-        0.5f, 0.5f, 0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f,   // 0
-        0.5f, 0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f,  // 1
-        0.5f, -0.5f, 0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 1.0f, 1.0f,  // 2
-        0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 0.0f, 1.0f, // 3
+         0.5f,  0.5f,  0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f, // 0
+         0.5f,  0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f, // 1
+         0.5f, -0.5f,  0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 1.0f, 1.0f, // 2
+         0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 0.0f, 1.0f, // 3
 
-        -0.5f, 0.5f, 0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 0.0f, 0.0f,   // 4
-        -0.5f, 0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 1.0f, 0.0f,  // 5
-        -0.5f, -0.5f, 0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f,  // 6
+        -0.5f,  0.5f,  0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 0.0f, 0.0f, // 4
+        -0.5f,  0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 1.0f, 0.0f, // 5
+        -0.5f, -0.5f,  0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f, // 6
         -0.5f, -0.5f, -0.5f, /*****/ 1.0f, 1.0f, 1.0f, /*****/ 1.0f, 1.0f, // 7
 
-        0.5f, 0.5f, 0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f,   // 8
-        0.5f, 0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f,  // 9
-        -0.5f, 0.5f, 0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 1.0f, 1.0f,  // 10
-        -0.5f, 0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 0.0f, 1.0f, // 11
+         0.5f,  0.5f,  0.5f, /*****/ 0.0f, 0.0f, 0.0f, /*****/ 1.0f, 0.0f, // 8
+         0.5f,  0.5f, -0.5f, /*****/ 0.0f, 0.0f, 1.0f, /*****/ 0.0f, 0.0f, // 9
+        -0.5f,  0.5f,  0.5f, /*****/ 1.0f, 0.0f, 0.0f, /*****/ 1.0f, 1.0f, // 10
+        -0.5f,  0.5f, -0.5f, /*****/ 1.0f, 0.0f, 1.0f, /*****/ 0.0f, 1.0f, // 11
 
-        0.5f, -0.5f, 0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 0.0f, 0.0f,   // 12
-        0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 1.0f, 0.0f,  // 13
-        -0.5f, -0.5f, 0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f,  // 14
+         0.5f, -0.5f,  0.5f, /*****/ 0.0f, 1.0f, 0.0f, /*****/ 0.0f, 0.0f, // 12
+         0.5f, -0.5f, -0.5f, /*****/ 0.0f, 1.0f, 1.0f, /*****/ 1.0f, 0.0f, // 13
+        -0.5f, -0.5f,  0.5f, /*****/ 1.0f, 1.0f, 0.0f, /*****/ 0.0f, 1.0f, // 14
         -0.5f, -0.5f, -0.5f, /*****/ 1.0f, 1.0f, 1.0f, /*****/ 1.0f, 1.0f, // 15
     };
 
     GLuint indxs[] = {
-        3,
-        1,
-        5,
-        3,
-        5,
-        7,
-        6,
-        4,
-        0,
-        6,
-        0,
-        2,
-
-        7,
-        5,
-        4,
-        7,
-        4,
-        6,
-        2,
-        0,
-        1,
-        2,
-        1,
-        3,
-
-        10,
-        11,
-        9,
-        10,
-        9,
-        8,
-        15,
-        14,
-        12,
-        15,
-        12,
-        13,
+         3,  1,  5,    3,  5,  7,
+         6,  4,  0,    6,  0,  2,
+         7,  5,  4,    7,  4,  6,
+         2,  0,  1,    2,  1,  3,
+        10, 11,  9,   10,  9,  8,
+        15, 14, 12,   15, 12, 13,
     };
 
     glGenVertexArrays(1, &m_vao);
@@ -104,7 +81,6 @@ Game::Game() : m_shader("../shaders/basic.v.glsl", "../shaders/basic.f.glsl"),
     glEnableVertexAttribArray(2);
 
     glClearColor(.18f, .18f, .18f, .18f);
-    glBindVertexArray(m_vao);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 }
@@ -146,13 +122,14 @@ void Game::update(Events &events)
 
     GLuint umx = m_shader.uniform("mx");
     GLuint umy = m_shader.uniform("my");
+    m_shader.bind();
     glUniform1i(umx, events.cursor.x);
     glUniform1i(umy, events.cursor.y);
 }
 
 void Game::render()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     static float a = 0;
     a += 0.01f;
@@ -166,7 +143,7 @@ void Game::render()
 
     Mat4 proj = m_camera.getProjectionMatrix();
     Mat4 view = m_camera.getViewMatrix();
-    Mat4 model = trns * rotX * rotY;
+    Mat4 model = rotX;
 
     m_shader.bind();
     Mat4 mvp = proj * view * model;
@@ -178,4 +155,15 @@ void Game::render()
     glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, (void *)0);
     m_textures[1].bind();
     glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, (void *)(24 * 4));
+    glBindVertexArray(0);
+
+    // draw skybox
+
+    view[0][3] = 0;
+    view[1][3] = 0;
+    view[2][3] = 0;
+
+    Mat4 vp = proj * view;
+
+    m_skybox.render(vp);
 }
