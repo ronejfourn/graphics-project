@@ -3,10 +3,10 @@ layout (location = 0) in vec3 aPos;
 
 out vec3 TexCoords;
 
-uniform mat4 vp;
+uniform mat4 viewproj;
 
 void main()
 {
     TexCoords = aPos;
-    gl_Position = vp * vec4(aPos, 1.0f);
+    gl_Position = viewproj * vec4(aPos, 1.0f);
 }

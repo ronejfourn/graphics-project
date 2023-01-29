@@ -18,5 +18,6 @@ cd graphics-project
 chmod +x setup.sh
 ./setup.sh
 make
-./build/debug/graphics-project
+cd build
+./debug/graphics-project
 ```

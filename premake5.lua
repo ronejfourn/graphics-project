@@ -16,6 +16,7 @@ workspace "graphics-project"
 project "graphics-project"
   kind "ConsoleApp"
   language "C++"
+  cppdialect "C++17"
 
   location "%{wks.location}/build"
   targetdir "%{prj.location}/%{cfg.buildcfg}"
@@ -23,9 +24,8 @@ project "graphics-project"
 
   files { "%{wks.location}/**.cpp", "%{wks.location}/**.hpp" }
   files { "%{wks.location}/**.c"  , "%{wks.location}/**.h"   }
-  removefiles { "%{wks.location}/src/platform/*" }
-  removefiles { "%{wks.location}/extern/**" }
-  includedirs { "%{wks.location}/include" }
+  removefiles { "%{wks.location}/source/platform/specific/*" }
+  includedirs { "%{wks.location}/source", "%{wks.location}/extern"}
 
   filter "system:windows"
     defines "PLATFORM_WIN32"
