@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utility/math.hpp"
+#include "math/matrix.hpp"
 
 enum CameraMovement
 {
@@ -13,11 +13,13 @@ enum CameraMovement
 class Camera{
     private:
         //camera characteristics
-        Vec4 m_position;
-        Vec4 m_front;
-        Vec4 m_up;
-        Vec4 m_right;
-        Vec4 m_worldUp;
+        Vec3 m_position;
+        Vec3 m_front;
+        Vec3 m_up;
+        Vec3 m_right;
+        Vec3 m_worldUp;
+
+        f32 m_znear, m_zfar;
 
         //Determining euler's angle
         f32 m_yaw;
@@ -34,14 +36,16 @@ class Camera{
     //Camera methods:
     public:
 
-        Camera(Vec4 pos   = Vec4(0, 0, 0),
+        Camera(Vec3 pos   = Vec3(0, 0, 0),
                f32  fov   = 90,
                f32  ar    = 1,
-               Vec4 up    = Vec4(0, 1, 0),
+               Vec3 up    = Vec3(0, 1, 0),
                f32  yaw   = 0,
-               f32  pitch = 0);
+               f32  pitch = 0,
+               f32  znear = 0.01f,
+               f32  zfar  = 1000);
 
-        Vec4 getPosition() {return m_position;}
+        Vec3 getPosition() {return m_position;}
         void setFOV(f32 fov);
         void setAspectRatio(f32 ar);
         Mat4 getViewMatrix();

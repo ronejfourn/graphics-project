@@ -1,6 +1,6 @@
 #include "glad/glad.h"
+#include "math/matrix.hpp"
 #include "utility/png.hpp"
-#include "utility/math.hpp"
 #include "rendering/skybox.hpp"
 #include "rendering/camera.hpp"
 

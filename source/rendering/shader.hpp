@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utility/common.hpp"
-#include "utility/math.hpp"
+#include "math/matrix.hpp"
 #include <unordered_map>
 #include <string_view>
 

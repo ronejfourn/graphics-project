@@ -1,3 +1,4 @@
+#include "math/matrix.hpp"
 #include "world/world.hpp"
 
 static i32 mod(i32 o, i32 n)
@@ -93,7 +94,7 @@ World::~World()
     if (m_chunks) delete []m_chunks;
 }
 
-void World::update(const Vec4 &pos)
+void World::update(const Vec3 &pos)
 {
     i32 nxpos = (i32)floorf(pos.x / CHUNK_MAX_X);
     i32 nzpos = (i32)floorf(pos.z / CHUNK_MAX_Z);

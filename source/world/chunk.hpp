@@ -1,5 +1,6 @@
 #pragma once
 
+#include "math/vector.hpp"
 #include "utility/common.hpp"
 #include "rendering/vertexArray.hpp"
 
@@ -15,6 +16,7 @@ public:
      Chunk();
     ~Chunk() = default;
 
+    Vec3 getOrigin();
     void render(Shader &shader);
     void generate(i32 x, i32 z, FBMConfig &fc);
     void setEast (Chunk *p);
@@ -24,7 +26,7 @@ public:
 private:
     Chunk *m_east, *m_west, *m_north, *m_south;
     bool m_changed;
-    f32 m_x, m_z;
+    Vec3 m_origin;
     u8 m_blocks[CHUNK_MAX_Y][CHUNK_MAX_X][CHUNK_MAX_Z];
     VertexArray m_vao;
     u32 m_vertcount;

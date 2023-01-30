@@ -51,10 +51,10 @@ void Chunk::generate(i32 x, i32 z, FBMConfig &fc)
 {
     m_changed = true;
     memset(m_blocks, 0, sizeof(m_blocks));
-    m_x = x, m_z = z;
+    m_origin = Vec3(x, 0, z);
     for (u8 cx = 0; cx < CHUNK_MAX_X; cx ++) {
         for (u8 cz = 0; cz < CHUNK_MAX_Z; cz ++) {
-            u8 height = (u8)(fbm(m_x + cx / (f32)CHUNK_MAX_X, m_z + cz / (f32)CHUNK_MAX_Z, fc)
+            u8 height = (u8)(fbm(x + cx / (f32)CHUNK_MAX_X, z + cz / (f32)CHUNK_MAX_Z, fc)
                 * maxHeight + baseHeight);
             for (i32 y = 0; y < height; y ++)
                 m_blocks[y][cx][cz] = 1;
@@ -64,12 +64,17 @@ void Chunk::generate(i32 x, i32 z, FBMConfig &fc)
     }
 }
 
+Vec3 Chunk::getOrigin()
+{
+    return m_origin;
+}
+
 void Chunk::render(Shader &shader)
 {
     if (m_changed) _update();
 
     shader.bind();
-    shader.uniform("xz", m_x, m_z);
+    shader.uniform("xz", m_origin.x, m_origin.z);
 
     m_vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, m_vertcount);

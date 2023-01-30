@@ -15,7 +15,7 @@ public:
     ~World();
 
     void generate(u64 seed);
-    void update(const Vec4 &pos);
+    void update(const Vec3 &pos);
     void render(Camera &camera);
 private:
     Shader m_shader;

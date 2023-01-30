@@ -1,10 +1,11 @@
 #include "camera.hpp"
+#include "math/matrix.hpp"
 
 constexpr f32 SPEED       =  10.0f ;
 constexpr f32 SENSITIVITY =  0.1f ;
 constexpr f32 ZOOM        =  20.0f;
 
-Camera::Camera(Vec4 pos, f32  fov, f32  ar, Vec4 up, f32  yaw, f32 pitch)
+Camera::Camera(Vec3 pos, f32 fov, f32 ar, Vec3 up, f32 yaw, f32 pitch, f32 zn, f32 zf)
 {
     m_mouseSensitivity = SENSITIVITY;
     m_zoom = ZOOM;
@@ -17,14 +18,16 @@ Camera::Camera(Vec4 pos, f32  fov, f32  ar, Vec4 up, f32  yaw, f32 pitch)
 
     m_hfov = (f32)(DEG2RAD(fov) / 2.0f);
     m_ar  = ar;
-    m_projection = mat4Perspective(0.01f, 1000, fov, ar);
+    m_znear = zn;
+    m_zfar  = zf;
+    m_projection = mat4Perspective(zn, zf, fov, ar);
 
     updateCamera();
 }
 
 void Camera::updateCamera()
 {
-    Vec4 front_;
+    Vec3 front_;
     float cosYaw = cosf(m_yaw);
     front_.x = cosYaw * sinf(m_pitch);
     front_.y = sinf(m_yaw);
@@ -36,12 +39,11 @@ void Camera::updateCamera()
 
 void Camera::processKeyboard(CameraMovement direction, f32 deltaTime)
 {
-    Vec4 velocity;
+    Vec3 velocity;
     if (direction & FORWARD ) velocity += m_front;
     if (direction & BACKWARD) velocity -= m_front;
     if (direction & LEFT    ) velocity -= m_right;
     if (direction & RIGHT   ) velocity += m_right;
-    velocity.w = 0;
     if (squareMagnitude(velocity) == 0) return;
     m_position += normalize(velocity) * m_movementSpeed * deltaTime;
 }
@@ -71,11 +73,13 @@ void Camera::processMouseScroll(f32 yoffset)
         m_zoom = 45.0f;
 }
 
-Mat4 Camera::getViewMatrix() {
-    return lookAt(m_position, m_front , m_worldUp);
+Mat4 Camera::getViewMatrix()
+{
+    return mat4LookAt(m_position, m_front , m_worldUp);
 }
 
-Mat4 Camera::getProjectionMatrix() {
+Mat4 Camera::getProjectionMatrix()
+{
     return m_projection;
 }
 
