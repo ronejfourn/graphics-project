@@ -3,9 +3,8 @@
 
 static const char *shaderTypeToString(u32 type)
 {
-    return type == GL_VERTEX_SHADER   ? "vertex"   :
-           type == GL_FRAGMENT_SHADER ? "fragment" :
-           "unknown";
+    return type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment"
+                                                                            : "unknown";
 }
 
 static u32 compileShader(u32 type, const char *path)
@@ -16,7 +15,8 @@ static u32 compileShader(u32 type, const char *path)
         die("failed to open file %s", path);
     const char *sType = shaderTypeToString(type);
     GLuint shader = glCreateShader(type);
-    if (!shader) {
+    if (!shader)
+    {
         free(src);
         die("failed to create %s shader", sType);
     }
@@ -24,18 +24,20 @@ static u32 compileShader(u32 type, const char *path)
     glShaderSource(shader, 1, &src, NULL);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
+    if (!success)
+    {
         free(src);
         char log[512];
         glGetShaderInfoLog(shader, 512, nullptr, log);
-        die("while compiling %s shader:\n", log);
+        die("while compiling %s shader:\n%s", sType, log);
     }
     free(src);
     return shader;
 }
 
-Shader::Shader(const char *vpath, const char *fpath) {
-    u32 vsh = compileShader(GL_VERTEX_SHADER  , vpath);
+Shader::Shader(const char *vpath, const char *fpath)
+{
+    u32 vsh = compileShader(GL_VERTEX_SHADER, vpath);
     u32 fsh = compileShader(GL_FRAGMENT_SHADER, fpath);
 
     m_program = glCreateProgram();
@@ -48,7 +50,8 @@ Shader::Shader(const char *vpath, const char *fpath) {
     GLint success = 0;
     glLinkProgram(m_program);
     glGetProgramiv(m_program, GL_LINK_STATUS, &success);
-    if (!success) {
+    if (!success)
+    {
         char log[512];
         glGetProgramInfoLog(m_program, 512, nullptr, log);
         die("while linking:\n %s", log);
@@ -60,32 +63,40 @@ Shader::Shader(const char *vpath, const char *fpath) {
     glDeleteShader(fsh);
 }
 
-void Shader::destroy() {
+void Shader::destroy()
+{
     glDeleteProgram(m_program);
 }
 
-void Shader::bind() {
+void Shader::bind()
+{
     glUseProgram(m_program);
 }
 
-void Shader::uniform(const std::string_view &name, Mat4& mat) {
+void Shader::uniform(const std::string_view &name, Mat4 &mat)
+{
     i32 u = _uniformLocation(name);
     glUniformMatrix4fv(u, 1, GL_TRUE, &mat[0][0]);
 }
 
-void Shader::uniform(const std::string_view &name, f32 a, f32 b) {
+void Shader::uniform(const std::string_view &name, f32 a, f32 b)
+{
     i32 u = _uniformLocation(name);
     glUniform2f(u, a, b);
 }
 
-i32 Shader::_uniformLocation(const std::string_view &name) {
+i32 Shader::_uniformLocation(const std::string_view &name)
+{
     i32 r;
 
     auto f = m_uniforms.find(name);
-    if (f == m_uniforms.end()) {
-        r = glGetUniformLocation(m_program, name.cbegin());
+    if (f == m_uniforms.end())
+    {
+        r = glGetUniformLocation(m_program, name.data());
         m_uniforms[name] = r;
-    } else {
+    }
+    else
+    {
         r = f->second;
     }
 
