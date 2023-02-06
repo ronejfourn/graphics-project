@@ -11,6 +11,7 @@ Texture2D::Texture2D(const char *path)
 
     float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glGenTextures(1, &m_texture);
+
     glBindTexture(GL_TEXTURE_2D, m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

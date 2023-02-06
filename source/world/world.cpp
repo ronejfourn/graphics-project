@@ -3,43 +3,50 @@
 
 static i32 mod(i32 o, i32 n)
 {
-    if (o < 0) { o = n - ((-o) & (n - 1)); }
+    if (o < 0)
+    {
+        o = n - ((-o) & (n - 1));
+    }
     return o & (n - 1);
 }
 
-World::World(const char *vsh, const char *fsh, u8 nchunks, Vec4 pos) :
-    m_shader(vsh, fsh)
+World::World(u8 nchunks, Vec4 pos) :
+    m_textureArray("../resources/texture.png", 2, 2),
+    m_shader("../shaders/block.v.glsl", "../shaders/block.f.glsl")
 {
     m_xpos = (i32)floorf(pos.x / CHUNK_MAX_X);
     m_zpos = (i32)floorf(pos.z / CHUNK_MAX_Z);
     m_xoff = m_xpos - nchunks / 2;
     m_zoff = m_zpos - nchunks / 2;
     m_nchunks = nchunks;
-    m_chunks  = new Chunk[nchunks * nchunks];
+    m_chunks = new Chunk[nchunks * nchunks];
     if (!m_chunks)
         die("failed to allocate chunks");
-}
+};
 
 void World::_loadNewChunks(
-        i32 xmax, i32 xmin,
-        i32 zmax, i32 zmin,
-        i32 xinc, i32 zinc)
+    i32 xmax, i32 xmin,
+    i32 zmax, i32 zmin,
+    i32 xinc, i32 zinc)
 {
-    for (i32 x = xmin; x <= xmax; x ++) {
+    for (i32 x = xmin; x <= xmax; x++)
+    {
         i32 xi = mod(x, m_nchunks);
         i32 bi = xi * m_nchunks;
-        for (i32 z = zmin; z <= zmax; z ++) {
+        for (i32 z = zmin; z <= zmax; z++)
+        {
             i32 zi = mod(z, m_nchunks);
             Chunk &self = m_chunks[bi + zi];
             self.generate(x, z, m_fbmc);
 
             i32 xn, zn;
-            self.setEast (nullptr);
-            self.setWest (nullptr);
+            self.setEast(nullptr);
+            self.setWest(nullptr);
             self.setNorth(nullptr);
             self.setSouth(nullptr);
 
-            if (x > xmin || xinc > 0) {
+            if (x > xmin || xinc > 0)
+            {
                 xn = mod(x - 1, m_nchunks);
                 zn = zi;
                 Chunk *w = &m_chunks[xn * m_nchunks + zn];
@@ -47,7 +54,8 @@ void World::_loadNewChunks(
                 self.setWest(w);
             }
 
-            if (x < xmax || xinc < 0) {
+            if (x < xmax || xinc < 0)
+            {
                 xn = mod(x + 1, m_nchunks);
                 zn = zi;
                 Chunk *e = &m_chunks[xn * m_nchunks + zn];
@@ -55,7 +63,8 @@ void World::_loadNewChunks(
                 self.setEast(e);
             }
 
-            if (z > zmin || zinc > 0) {
+            if (z > zmin || zinc > 0)
+            {
                 xn = xi;
                 zn = mod(z - 1, m_nchunks);
                 Chunk *s = &m_chunks[xn * m_nchunks + zn];
@@ -63,7 +72,8 @@ void World::_loadNewChunks(
                 self.setSouth(s);
             }
 
-            if (z < zmax || zinc < 0) {
+            if (z < zmax || zinc < 0)
+            {
                 xn = xi;
                 zn = mod(z + 1, m_nchunks);
                 Chunk *n = &m_chunks[xn * m_nchunks + zn];
@@ -91,7 +101,8 @@ void World::generate(u64 seed)
 
 World::~World()
 {
-    if (m_chunks) delete []m_chunks;
+    if (m_chunks)
+        delete[] m_chunks;
 }
 
 void World::update(const Vec3 &pos)
@@ -108,11 +119,14 @@ void World::update(const Vec3 &pos)
 
     xmin = 0, xmax = -1, zmin = 0, zmax = -1;
 
-    if (zinc < 0) {
+    if (zinc < 0)
+    {
         zmin = m_zoff + zinc;
         zmax = m_zoff - 1;
         xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
-    } else if (zinc > 0) {
+    }
+    else if (zinc > 0)
+    {
         zmin = m_zoff + m_nchunks;
         zmax = m_zoff + m_nchunks + zinc - 1;
         xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
@@ -123,11 +137,14 @@ void World::update(const Vec3 &pos)
 
     xmin = 0, xmax = -1, zmin = 0, zmax = -1;
 
-    if (xinc < 0) {
+    if (xinc < 0)
+    {
         xmin = m_xoff + xinc;
         xmax = m_xoff - 1;
         zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
-    } else if (xinc > 0) {
+    }
+    else if (xinc > 0)
+    {
         xmin = m_xoff + m_nchunks;
         xmax = m_xoff + m_nchunks + xinc - 1;
         zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
@@ -137,12 +154,14 @@ void World::update(const Vec3 &pos)
     m_xoff += xinc;
 }
 
-void World::render(Camera &cam) {
+void World::render(Camera &cam)
+{
     Mat4 viewproj = cam.getProjectionMatrix() * cam.getViewMatrix();
     m_shader.bind();
     m_shader.uniform("viewproj", viewproj);
+    m_textureArray.bind();
 
     const i32 m = m_nchunks * m_nchunks;
-    for (i32 i = 0; i < m; i ++)
+    for (i32 i = 0; i < m; i++)
         m_chunks[i].render(m_shader);
 }

@@ -14,7 +14,7 @@ public:
         const char* paths[6];
     };
 
-    Skybox(const char *vshader, const char *fshader, Paths);
+    Skybox(Paths);
     void render(Camera &camera);
     ~Skybox();
 private:

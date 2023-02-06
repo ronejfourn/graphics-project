@@ -4,20 +4,24 @@ layout (location = 0) in uint aVert;
 uniform vec2 xz;
 uniform mat4 viewproj;
 
-out vec3 vCol;
+#define ONES(n) ((1u << n) - 1u)
+
+out vec3 uvw;
 
 void main() {
     uint v = aVert;
 
-    float x = float(v &  31u);
+    float x = float(v & ONES(5));
     v = v >> 5;
-    float z = float(v &  31u);
+    float z = float(v & ONES(5));
     v = v >> 5;
-    float y = float(v & 511u);
+    float y = float(v & ONES(9));
     v = v >> 9;
-    uint t = (v & 255u);
+    uint uv = v & ONES(2);
+    v = v >> 2;
+    uint w  = v & ONES(8);
 
-    vCol = vec3(float(t & 1u), float((t >> 1) & 1u), float((t >> 2) & 1u));
+    uvw = vec3(float((uv >> 1u) & 1u), float(uv & 1u), float(w));
     gl_Position = viewproj * vec4(
         x + xz.x * 16.0f,
         y,

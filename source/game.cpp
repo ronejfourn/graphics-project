@@ -11,7 +11,6 @@ Game::Game() :
     ////////////////////////////////////////////////////////////////////////////////
     // Texture [Risav]
     m_skybox(
-        "../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl",
         {
             "../resources/skybox/right.png",
             "../resources/skybox/left.png",
@@ -21,7 +20,7 @@ Game::Game() :
             "../resources/skybox/back.png",
         }),
     ////////////////////////////////////////////////////////////////////////////////
-    m_world("../shaders/basic.v.glsl", "../shaders/basic.f.glsl", 32)
+    m_world(32)
 {
     glClearColor(.18f, .18f, .18f, .18f);
     glEnable(GL_DEPTH_TEST);

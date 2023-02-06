@@ -25,9 +25,9 @@ static constexpr f32 skyboxVertices[] = {
 };
 
 
-Skybox::Skybox(const char *vshader, const char *fshader, Paths p) :
+Skybox::Skybox(Paths p) :
     m_vao(STATIC),
-    m_shader(vshader, fshader)
+    m_shader("../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl")
 {
     u32 width, height;
     glGenTextures(1, &m_texture);

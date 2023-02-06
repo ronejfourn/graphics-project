@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utility/common.hpp"
+#include"textureArray.hpp"
 
 class Texture2D
 {

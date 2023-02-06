@@ -57,9 +57,9 @@ void Chunk::generate(i32 x, i32 z, FBMConfig &fc)
             u8 height = (u8)(fbm(x + cx / (f32)CHUNK_MAX_X, z + cz / (f32)CHUNK_MAX_Z, fc)
                 * maxHeight + baseHeight);
             for (i32 y = 0; y < height; y ++)
-                m_blocks[y][cx][cz] = 1;
+                m_blocks[y][cx][cz] = GRASS;
             for (i32 y = height; y < seaLevel; y ++)
-                m_blocks[y][cx][cz] = 2;
+                m_blocks[y][cx][cz] = WATER;
         }
     }
 }
@@ -94,16 +94,16 @@ void Chunk::_update()
         for (u16 x = 0; x < CHUNK_MAX_X; x ++) {
             for (u16 z = 0; z < CHUNK_MAX_Z; z ++) {
                 u8 type = m_blocks[y][x][z];
-                if (!type) continue;
+                if (type == AIR) continue;
 
-                bb = (y > 0) ? m_blocks[y - 1][x][z] : 0;
-                tb = (y < CHUNK_MAX_Y - 1) ? m_blocks[y + 1][x][z] : 0;
+                bb = (y > 0) ? m_blocks[y - 1][x][z] : AIR;
+                tb = (y < CHUNK_MAX_Y - 1) ? m_blocks[y + 1][x][z] : AIR;
 
-                sb = (z > 0) ? m_blocks[y][x][z - 1] : m_south ? m_south->m_blocks[y][x][CHUNK_MAX_Z - 1] : 0;
-                nb = (z < CHUNK_MAX_Z - 1) ? m_blocks[y][x][z + 1] : m_north ? m_north->m_blocks[y][x][0] : 0;
+                sb = (z > 0) ? m_blocks[y][x][z - 1] : m_south ? m_south->m_blocks[y][x][CHUNK_MAX_Z - 1] : GRASS;
+                nb = (z < CHUNK_MAX_Z - 1) ? m_blocks[y][x][z + 1] : m_north ? m_north->m_blocks[y][x][0] : GRASS;
 
-                wb = (x > 0) ? m_blocks[y][x - 1][z] : m_west ? m_west->m_blocks[y][CHUNK_MAX_X - 1][z] : 0;
-                eb = (x < CHUNK_MAX_X - 1) ? m_blocks[y][x + 1][z] : m_east ? m_east->m_blocks[y][0][z] : 0;
+                wb = (x > 0) ? m_blocks[y][x - 1][z] : m_west ? m_west->m_blocks[y][CHUNK_MAX_X - 1][z] : GRASS;
+                eb = (x < CHUNK_MAX_X - 1) ? m_blocks[y][x + 1][z] : m_east ? m_east->m_blocks[y][0][z] : GRASS;
 
                 fillVerts(verts, count, x, y, z, type, sb, nb, eb, wb, tb, bb);
             }
