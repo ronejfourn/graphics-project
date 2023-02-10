@@ -1,27 +1,31 @@
 #include "math/matrix.hpp"
 #include "world/world.hpp"
+#include "world/block.hpp"
+
+struct ChunkDistPair {
+    Chunk *ptr;
+    f32 dist;
+};
 
 static i32 mod(i32 o, i32 n)
 {
     if (o < 0)
-    {
         o = n - ((-o) & (n - 1));
-    }
     return o & (n - 1);
 }
 
-World::World(u8 nchunks, Vec4 pos) :
-    m_textureArray("../resources/texture.png", 2, 2),
-    m_shader("../shaders/block.v.glsl", "../shaders/block.f.glsl")
+World::World(u8 nchunks) :
+    m_shader("../shaders/block.v.glsl", "../shaders/block.f.glsl"),
+    m_textureArray(BLOCK_TEXTURE_FILE, BLOCK_TILES_PER_ROW, BLOCK_TILES_PER_COLUMN)
 {
-    m_xpos = (i32)floorf(pos.x / CHUNK_MAX_X);
-    m_zpos = (i32)floorf(pos.z / CHUNK_MAX_Z);
-    m_xoff = m_xpos - nchunks / 2;
-    m_zoff = m_zpos - nchunks / 2;
     m_nchunks = nchunks;
     m_chunks = new Chunk[nchunks * nchunks];
     if (!m_chunks)
-        die("failed to allocate chunks");
+        die("out of memory");
+
+    m_sortedChunks = new ChunkDistPair[nchunks * nchunks];
+    if (!m_sortedChunks)
+        die("out of memory");
 };
 
 void World::_loadNewChunks(
@@ -84,8 +88,13 @@ void World::_loadNewChunks(
     }
 }
 
-void World::generate(u64 seed)
+void World::generate(u64 seed, const Vec3 &pos)
 {
+    m_xpos = (i32)floorf(pos.x / CHUNK_MAX_X);
+    m_zpos = (i32)floorf(pos.z / CHUNK_MAX_Z);
+    m_xoff = m_xpos - m_nchunks / 2;
+    m_zoff = m_zpos - m_nchunks / 2;
+
     m_fbmc = FBMConfig(seed);
     m_xoff = m_xpos - m_nchunks / 2;
     m_zoff = m_zpos - m_nchunks / 2;
@@ -97,6 +106,23 @@ void World::generate(u64 seed)
     i32 zmax = m_zpos + m_nchunks / 2 - 1;
 
     _loadNewChunks(xmax, xmin, zmax, zmin, 0, 0);
+    _sortChunks(pos);
+}
+
+void World::_sortChunks(const Vec3 &pos)
+{
+    const i32 m = m_nchunks * m_nchunks;
+    for (i32 i = 0; i < m; i++) {
+        Vec3 orig = m_chunks[i].getCenter();
+        float dist = squareMagnitude(orig - pos);
+        m_sortedChunks[i] = {&m_chunks[i], dist};
+    }
+
+    auto compare = [](const void *a, const void *b)->int {
+        return ((ChunkDistPair *)a)->dist < ((ChunkDistPair *)b)->dist;
+    };
+
+    qsort(m_sortedChunks, m, sizeof(ChunkDistPair), compare);
 }
 
 World::~World()
@@ -110,8 +136,10 @@ void World::update(const Vec3 &pos)
     i32 nxpos = (i32)floorf(pos.x / CHUNK_MAX_X);
     i32 nzpos = (i32)floorf(pos.z / CHUNK_MAX_Z);
 
-    if (nxpos == m_xpos && nzpos == m_zpos)
+    if (nxpos == m_xpos && nzpos == m_zpos) {
+        _sortChunks(pos);
         return;
+    }
 
     i32 xmin, xmax, zmin, zmax;
     i32 xinc = nxpos - m_xpos, zinc = nzpos - m_zpos;
@@ -152,6 +180,8 @@ void World::update(const Vec3 &pos)
 
     _loadNewChunks(xmax, xmin, zmax, zmin, xinc, 0);
     m_xoff += xinc;
+
+    _sortChunks(pos);
 }
 
 void World::render(Camera &cam)
@@ -163,5 +193,5 @@ void World::render(Camera &cam)
 
     const i32 m = m_nchunks * m_nchunks;
     for (i32 i = 0; i < m; i++)
-        m_chunks[i].render(m_shader);
+        m_sortedChunks[i].ptr->render(m_shader);
 }

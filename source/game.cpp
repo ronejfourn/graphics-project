@@ -7,7 +7,10 @@ Game &Game::instance()
     return s_instance;
 }
 
+static const Vec3 DEF_CAMERA_POS(0, 120, 0);
+
 Game::Game() :
+    m_camera(DEF_CAMERA_POS),
     ////////////////////////////////////////////////////////////////////////////////
     // Texture [Risav]
     m_skybox(
@@ -22,11 +25,11 @@ Game::Game() :
     ////////////////////////////////////////////////////////////////////////////////
     m_world(32)
 {
-    glClearColor(.18f, .18f, .18f, .18f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_FRONT);
-    m_world.generate(123456789);
+    m_world.generate(123456789, DEF_CAMERA_POS);
 }
 
 Game::~Game() {
@@ -60,7 +63,7 @@ void Game::update(Events &events)
 
 void Game::render()
 {
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     m_world.render(m_camera);
 

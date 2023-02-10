@@ -19,3 +19,6 @@ struct FBMConfig {
 
 f32 noise(f32 xin, f32 yin, u8 perm[512]);
 f32 fbm(f32 x, f32 y, FBMConfig &fc);
+
+typedef struct pcg32_random_t { uint64_t state;  uint64_t inc; } pcg32_random_t;
+uint32_t pcg32_random_r(pcg32_random_t* rng);

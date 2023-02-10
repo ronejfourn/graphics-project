@@ -30,6 +30,11 @@ void VertexArray::setData(u32 size, void *data)
     }
 }
 
+void VertexArray::subData(u32 size, void *data, u32 offset)
+{
+    glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+}
+
 void VertexArray::setAttribs(u32 nattribs, VertexAttrib *attribs)
 {
     ASSERT(nattribs && attribs, "invalid attributes");

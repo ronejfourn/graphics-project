@@ -23,6 +23,7 @@ public:
      VertexArray(VertexUsage usage);
     ~VertexArray();
     void setData(u32 size, void *data);
+    void subData(u32 size, void *data, u32 offset);
     void setAttribs(u32 nattribs, VertexAttrib *attribs);
     void bind();
 private:

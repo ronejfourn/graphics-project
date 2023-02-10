@@ -1,11 +1,18 @@
 #pragma once
 
 #include "utility/common.hpp"
+#define BLOCK_TEXTURE_FILE       "../resources/texture.png"
+#define BLOCK_TILES_PER_ROW      4
+#define BLOCK_TILES_PER_COLUMN   2
 
 enum BlockType {
     AIR = 0,
     GRASS,
+    DIRT,
+    SAND,
     WATER,
+    OAKTREETRUNK,
+    OAKLEAF,
 
     _BLOCK_TYPE_MAX_
 };
