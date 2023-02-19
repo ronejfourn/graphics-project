@@ -1,7 +1,7 @@
 #include "png.hpp"
 #include <memory.h>
 
-#define MAX_HLIT 286
+#define MAX_HLIT 289
 #define MAX_HDIST 32
 #define MAX_CODE_LENGTH 15
 
@@ -131,8 +131,16 @@ u8 *loadPNGFromMemory(const u8 *buffer, size_t size, u32 *w, u32 *h)
     }
 
     u32 litlendistLengths[MAX_HLIT + MAX_HDIST];
-    u32 litlenSymbols[MAX_HLIT], litlenCounts[MAX_CODE_LENGTH + 1];
-    u32 distSyms[MAX_HDIST], distCounts[MAX_CODE_LENGTH + 1];
+    u32 litlenSymbols    [MAX_HLIT];
+    u32 litlenCounts     [MAX_CODE_LENGTH + 1];
+    u32 distSyms         [MAX_HDIST];
+    u32 distCounts       [MAX_CODE_LENGTH + 1];
+    memset(litlendistLengths, 0, sizeof(litlendistLengths));
+    memset(litlenSymbols    , 0, sizeof(litlenSymbols    ));
+    memset(litlenCounts     , 0, sizeof(litlenCounts     ));
+    memset(distSyms         , 0, sizeof(distSyms         ));
+    memset(distCounts       , 0, sizeof(distCounts       ));
+
 
     Huffman litlenHuffman;
     litlenHuffman.symbols = litlenSymbols;
@@ -292,7 +300,7 @@ size_t uncompressed(ByteBuffer *idat, ByteBuffer *b, size_t idx, u8 *decompData)
 bool fixedHuffman(u32 *litlendistLengths, Huffman *litlenHuffman, Huffman *distHuffman)
 {
 #define FIXED_MAX_LIT_VALUE 288
-#define FIXED_MAX_DIST_VALUE 31
+#define FIXED_MAX_DIST_VALUE 32
     i32 i = 0;
     for (; i < FIXED_MAX_LIT_VALUE; i ++) {
         u32 v = 0;
@@ -303,7 +311,7 @@ bool fixedHuffman(u32 *litlendistLengths, Huffman *litlenHuffman, Huffman *distH
         litlendistLengths[i] = v;
     }
 
-    for (; i < MAX_HLIT + MAX_HDIST; i++)
+    for (; i < FIXED_MAX_LIT_VALUE + FIXED_MAX_DIST_VALUE; i++)
         litlendistLengths[i] = 5;
 
     litlenHuffman->lengths  = litlendistLengths;

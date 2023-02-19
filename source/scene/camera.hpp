@@ -27,11 +27,10 @@ class Camera{
 
         //controlling movement with precision
         f32 m_mouseSensitivity;
-        f32 m_zoom;
         f32 m_movementSpeed;
 
         f32  m_hfov, m_ar;
-        Mat4 m_projection;
+        Mat4 m_proj, m_view;
 
     //Camera methods:
     public:
@@ -45,13 +44,13 @@ class Camera{
                f32  znear = 0.01f,
                f32  zfar  = 1000);
 
-        Vec3 getPosition() {return m_position;}
         void setFOV(f32 fov);
         void setAspectRatio(f32 ar);
-        Mat4 getViewMatrix();
-        Mat4 getProjectionMatrix();
+        void setPlanes(f32 zn, f32 zf);
+        Vec3 getPosition() const {return m_position;}
+        Mat4 getViewMatrix() const {return m_view;}
+        Mat4 getProjectionMatrix() const {return m_proj;}
         void processKeyboard(CameraMovement, f32);
         void processMouseMovement(f32 xoffset, f32 yoffset);
-        void processMouseScroll(f32);
         void updateCamera();
 };

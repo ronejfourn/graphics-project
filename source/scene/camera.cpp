@@ -1,14 +1,12 @@
 #include "camera.hpp"
 #include "math/matrix.hpp"
 
-constexpr f32 SPEED       =  10.0f ;
+constexpr f32 SPEED       =  25 ;
 constexpr f32 SENSITIVITY =  0.1f ;
-constexpr f32 ZOOM        =  20.0f;
 
 Camera::Camera(Vec3 pos, f32 fov, f32 ar, Vec3 up, f32 yaw, f32 pitch, f32 zn, f32 zf)
 {
     m_mouseSensitivity = SENSITIVITY;
-    m_zoom = ZOOM;
     m_movementSpeed = SPEED;
 
     m_position = pos;
@@ -16,11 +14,11 @@ Camera::Camera(Vec3 pos, f32 fov, f32 ar, Vec3 up, f32 yaw, f32 pitch, f32 zn, f
     m_yaw      = yaw;
     m_pitch    = pitch;
 
-    m_hfov = (f32)(DEG2RAD(fov) / 2.0f);
-    m_ar  = ar;
+    m_hfov  = (f32)(DEG2RAD(fov) / 2.0f);
+    m_ar    = ar;
     m_znear = zn;
     m_zfar  = zf;
-    m_projection = mat4Perspective(zn, zf, fov, ar);
+    m_proj  = mat4Perspective(zn, zf, m_hfov * 2, ar);
 
     updateCamera();
 }
@@ -35,6 +33,7 @@ void Camera::updateCamera()
     m_front = normalize(front_);
     m_right = normalize(cross(m_worldUp, m_front));
     m_up = normalize(cross(m_front, m_right));
+    m_view = mat4LookAt(m_position, m_front , m_worldUp);
 }
 
 void Camera::processKeyboard(CameraMovement direction, f32 deltaTime)
@@ -46,6 +45,7 @@ void Camera::processKeyboard(CameraMovement direction, f32 deltaTime)
     if (direction & RIGHT   ) velocity += m_right;
     if (squareMagnitude(velocity) == 0) return;
     m_position += normalize(velocity) * m_movementSpeed * deltaTime;
+    m_view = mat4LookAt(m_position, m_front , m_worldUp);
 }
 
 void Camera::processMouseMovement(f32 xoffset, f32 yoffset)
@@ -64,34 +64,19 @@ void Camera::processMouseMovement(f32 xoffset, f32 yoffset)
     updateCamera();
 }
 
-void Camera::processMouseScroll(f32 yoffset)
-{
-    m_zoom -= (f32)yoffset;
-    if (m_zoom < 1.0f)
-        m_zoom = 1.0f;
-    if (m_zoom > 45.0f)
-        m_zoom = 45.0f;
-}
-
-Mat4 Camera::getViewMatrix()
-{
-    return mat4LookAt(m_position, m_front , m_worldUp);
-}
-
-Mat4 Camera::getProjectionMatrix()
-{
-    return m_projection;
-}
-
 void Camera::setFOV(f32 fov) {
     m_hfov = (f32)(DEG2RAD(fov) / 2.0f);
     f32 tanhfov = tanf(m_hfov);
-    m_projection[0][0] = 1 / (tanhfov * m_ar);
-    m_projection[1][1] = 1 / tanhfov;
+    m_proj[0][0] = 1 / (tanhfov * m_ar);
+    m_proj[1][1] = 1 / tanhfov;
 }
 
 void Camera::setAspectRatio(f32 ar) {
     m_ar = ar;
     f32 tanhfov = tanf(m_hfov);
-    m_projection[0][0] = 1 / (tanhfov * m_ar);
+    m_proj[0][0] = 1 / (tanhfov * m_ar);
+}
+
+void Camera::setPlanes(f32 zn, f32 zf) {
+    m_proj = mat4Perspective(zn, zf, m_hfov * 2, m_ar);
 }

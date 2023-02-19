@@ -5,7 +5,6 @@
 union Mat4
 {
     Vec4 r[4];
-    f32 m[4][4];
 
     Mat4() {
         r[0] = {1, 0, 0, 0};
@@ -21,7 +20,8 @@ union Mat4
         r[3] = {0, 0, 0, v};
     }
 
-    Mat4(Vec4 r1, Vec4 r2, Vec4 r3, Vec4 r4) : r{r1, r2, r3, r4} {};
+    Mat4(const Vec4 &r1, const Vec4 &r2, const Vec4 &r3, const Vec4 &r4) :
+        r{r1, r2, r3, r4} {};
 
     Vec4 &operator[] (int i)
     {
@@ -59,7 +59,7 @@ inline Mat4 mat4Translation(f32 x, f32 y, f32 z)
 inline Mat4 mat4Perspective(f32 zn, f32 zf, f32 fov, f32 ar)
 {
     f32 zr = zn - zf;
-    f32 a = (float)DEG2RAD(fov / 2);
+    f32 a = (float)(fov / 2);
     f32 y = 1 / tanf(a);
     f32 x = y / ar;
     f32 p = - (zn + zf) / zr;
@@ -69,6 +69,27 @@ inline Mat4 mat4Perspective(f32 zn, f32 zf, f32 fov, f32 ar)
         {0, y, 0, 0},
         {0, 0, p, q},
         {0, 0, 1, 0},
+    };
+}
+
+inline Mat4 mat4Orthographic(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)
+{
+    return {
+        {2 / (r - l), 0, 0, -(r + l) / (r - l)},
+        {0, 2 / (t - b), 0, -(t + b) / (t - b)},
+        {0, 0, 2 / (f - n), -(f + n) / (f - n)},
+        {0, 0, 0, 1}
+    };
+}
+
+inline Mat4 mat4Orthographic(f32 r, f32 t, f32 f)
+{
+    // l = -r, b = -t, n = -f
+    return {
+        {1 / r, 0, 0, 0},
+        {0, 1 / t, 0, 0},
+        {0, 0, 1 / f, 0},
+        {0, 0, 0, 1},
     };
 }
 
@@ -160,3 +181,45 @@ inline Mat4& operator-= (Mat4& a, const Mat4& b) {a = a - b; return a;}
 inline Mat4& operator*= (Mat4& a, const Mat4& b) {a = a * b; return a;}
 inline Mat4& operator*= (Mat4& a, const f32 b) {a = a * b; return a;}
 inline Mat4& operator/= (Mat4& a, const f32 b) {a = a / b; return a;}
+
+inline Mat4 mat4Inverse(const Mat4 &m) {
+    Mat4 i;
+    f32 a, b, c, d, e, f;
+
+    a = (m[2][2] * m[3][3] - m[3][2] * m[2][3]);
+    b = (m[2][1] * m[3][3] - m[3][1] * m[2][3]);
+    c = (m[2][1] * m[3][2] - m[3][1] * m[2][2]);
+    d = (m[2][0] * m[3][3] - m[3][0] * m[2][3]);
+    e = (m[2][0] * m[3][2] - m[3][0] * m[2][2]);
+    f = (m[2][0] * m[3][1] - m[3][0] * m[2][1]);
+
+    i[0][0] = + m[1][1] * a - m[1][2] * b + m[1][3] * c;
+    i[1][0] = - m[1][0] * a + m[1][2] * d - m[1][3] * e;
+    i[2][0] = + m[1][0] * b - m[1][1] * d + m[1][3] * f;
+    i[3][0] = - m[1][0] * c + m[1][1] * e - m[1][2] * f;
+
+    i[0][1] = - m[0][1] * a + m[0][2] * b - m[0][3] * c;
+    i[1][1] = + m[0][0] * a - m[0][2] * d + m[0][3] * e;
+    i[2][1] = - m[0][0] * b + m[0][1] * d - m[0][3] * f;
+    i[3][1] = + m[0][0] * c - m[0][1] * e + m[0][2] * f;
+
+    a = (m[0][2] * m[1][3] - m[1][2] * m[0][3]);
+    b = (m[0][1] * m[1][3] - m[1][1] * m[0][3]);
+    c = (m[0][1] * m[1][2] - m[1][1] * m[0][2]);
+    d = (m[0][0] * m[1][3] - m[1][0] * m[0][3]);
+    e = (m[0][0] * m[1][2] - m[1][0] * m[0][2]);
+    f = (m[0][0] * m[1][1] - m[1][0] * m[0][1]);
+
+    i[0][2] = + m[3][1] * a - m[3][2] * b + m[3][3] * c;
+    i[1][2] = - m[3][0] * a + m[3][2] * d - m[3][3] * e;
+    i[2][2] = + m[3][0] * b - m[3][1] * d + m[3][3] * f;
+    i[3][2] = - m[3][0] * c + m[3][1] * e - m[3][2] * f;
+
+    i[0][3] = - m[2][1] * a + m[2][2] * b - m[2][3] * c;
+    i[1][3] = + m[2][0] * a - m[2][2] * d + m[2][3] * e;
+    i[2][3] = - m[2][0] * b + m[2][1] * d - m[2][3] * f;
+    i[3][3] = + m[2][0] * c - m[2][1] * e + m[2][2] * f;
+
+    d = m[0][0] * i[0][0] + m[0][1] * i[1][0] + m[0][2] * i[2][0] + m[0][3] * i[3][0];
+    return i / d;
+}

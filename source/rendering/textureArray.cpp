@@ -22,7 +22,7 @@ TextureArray::TextureArray(const char *path, int x, int y)
     glBindTexture(GL_TEXTURE_2D_ARRAY, id);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, tileW, tileH, imageCount, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -42,6 +42,7 @@ TextureArray::TextureArray(const char *path, int x, int y)
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, tileW, tileH, 1, GL_RGBA, GL_UNSIGNED_BYTE, tile);
         }
     }
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     delete[] tile;
 }

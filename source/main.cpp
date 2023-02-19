@@ -1,5 +1,5 @@
 #include "platform/platform.hpp"
-#include "game.hpp"
+#include "scene/scene.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -10,15 +10,15 @@ int main() {
 
     std::chrono::high_resolution_clock a;
 
-    Game &game = Game::instance();
+    Scene &scene = Scene::instance();
     while (!platform.events.quit) {
         auto t1 = a.now();
 
-        game.update(platform.events);
+        scene.update(platform.events);
 
         auto t2 = a.now();
 
-        game.render();
+        scene.render();
 
         auto t3 = a.now();
 

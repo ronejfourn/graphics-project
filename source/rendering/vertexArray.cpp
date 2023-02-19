@@ -9,9 +9,7 @@ VertexArray::VertexArray(VertexUsage usage)
     m_vbsize = 0;
 
     glGenVertexArrays(1, &m_vao);
-    glBindVertexArray(m_vao);
     glGenBuffers(1, &m_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 }
 
 VertexArray::~VertexArray()

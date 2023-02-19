@@ -21,6 +21,7 @@ struct VertexAttrib {
 class VertexArray {
 public:
      VertexArray(VertexUsage usage);
+     VertexArray() {}
     ~VertexArray();
     void setData(u32 size, void *data);
     void subData(u32 size, void *data, u32 offset);

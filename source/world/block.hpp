@@ -17,5 +17,14 @@ enum BlockType {
     _BLOCK_TYPE_MAX_
 };
 
-void fillVerts(u32 *verts, u32 &count, u16 x, u16 y, u16 z, u8 type,
-        u8 sb, u8 nb, u8 eb, u8 wb, u8 tb, u8 bb);
+struct Surrounding {
+    u8 t, b;
+    u8 te, tw, tn, ts;
+    u8 me, mw, mn, ms;
+    u8 be, bw, bn, bs;
+    u8 tne, tnw, tse, tsw;
+    u8 mne, mnw, mse, msw;
+    u8 bne, bnw, bse, bsw;
+};
+
+void fillVerts(u32 *verts, u32 &count, u16 x, u16 y, u16 z, u8 c, const Surrounding &s);

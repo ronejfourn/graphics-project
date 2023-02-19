@@ -1,6 +1,8 @@
 #include "math/matrix.hpp"
 #include "world/world.hpp"
+#include "world/chunk.hpp"
 #include "world/block.hpp"
+#include "rendering/shader.hpp"
 
 struct ChunkDistPair {
     Chunk *ptr;
@@ -14,8 +16,7 @@ static i32 mod(i32 o, i32 n)
     return o & (n - 1);
 }
 
-World::World(u8 nchunks) :
-    m_shader("../shaders/block.v.glsl", "../shaders/block.f.glsl"),
+World::World(u32 nchunks) :
     m_textureArray(BLOCK_TEXTURE_FILE, BLOCK_TILES_PER_ROW, BLOCK_TILES_PER_COLUMN)
 {
     m_nchunks = nchunks;
@@ -26,31 +27,47 @@ World::World(u8 nchunks) :
     m_sortedChunks = new ChunkDistPair[nchunks * nchunks];
     if (!m_sortedChunks)
         die("out of memory");
-};
+}
 
-void World::_loadNewChunks(
-    i32 xmax, i32 xmin,
-    i32 zmax, i32 zmin,
-    i32 xinc, i32 zinc)
+void World::_loadNewChunks(i32 xmax, i32 xmin, i32 zmax, i32 zmin, i32 xinc, i32 zinc)
 {
-    for (i32 x = xmin; x <= xmax; x++)
-    {
+    for (i32 x = xmin; x <= xmax; x++) {
         i32 xi = mod(x, m_nchunks);
         i32 bi = xi * m_nchunks;
-        for (i32 z = zmin; z <= zmax; z++)
-        {
+        for (i32 z = zmin; z <= zmax; z++) {
+            i32 zi = mod(z, m_nchunks);
+            Chunk &self = m_chunks[bi + zi];
+
+            self.getEast     ()->setWest     (Chunk::dummy());
+            self.getWest     ()->setEast     (Chunk::dummy());
+            self.getNorth    ()->setSouth    (Chunk::dummy());
+            self.getSouth    ()->setNorth    (Chunk::dummy());
+            self.getNorthEast()->setSouthWest(Chunk::dummy());
+            self.getSouthEast()->setNorthWest(Chunk::dummy());
+            self.getNorthWest()->setSouthEast(Chunk::dummy());
+            self.getSouthWest()->setNorthEast(Chunk::dummy());
+
+            self.setEast     (Chunk::dummy());
+            self.setWest     (Chunk::dummy());
+            self.setNorth    (Chunk::dummy());
+            self.setSouth    (Chunk::dummy());
+            self.setNorthEast(Chunk::dummy());
+            self.setSouthEast(Chunk::dummy());
+            self.setNorthWest(Chunk::dummy());
+            self.setSouthWest(Chunk::dummy());
+        }
+    }
+
+    i32 xn, zn;
+    for (i32 x = xmin; x <= xmax; x++) {
+        i32 xi = mod(x, m_nchunks);
+        i32 bi = xi * m_nchunks;
+        for (i32 z = zmin; z <= zmax; z++) {
             i32 zi = mod(z, m_nchunks);
             Chunk &self = m_chunks[bi + zi];
             self.generate(x, z, m_fbmc);
 
-            i32 xn, zn;
-            self.setEast(nullptr);
-            self.setWest(nullptr);
-            self.setNorth(nullptr);
-            self.setSouth(nullptr);
-
-            if (x > xmin || xinc > 0)
-            {
+            if (x > xmin || xinc > 0) {
                 xn = mod(x - 1, m_nchunks);
                 zn = zi;
                 Chunk *w = &m_chunks[xn * m_nchunks + zn];
@@ -58,8 +75,7 @@ void World::_loadNewChunks(
                 self.setWest(w);
             }
 
-            if (x < xmax || xinc < 0)
-            {
+            if (x < xmax || xinc < 0) {
                 xn = mod(x + 1, m_nchunks);
                 zn = zi;
                 Chunk *e = &m_chunks[xn * m_nchunks + zn];
@@ -67,22 +83,48 @@ void World::_loadNewChunks(
                 self.setEast(e);
             }
 
-            if (z > zmin || zinc > 0)
-            {
+            if (z > zmin || zinc > 0) {
                 xn = xi;
                 zn = mod(z - 1, m_nchunks);
                 Chunk *s = &m_chunks[xn * m_nchunks + zn];
                 s->setNorth(&self);
                 self.setSouth(s);
+
+                if (x > xmin || xinc > 0) {
+                    xn = mod(x - 1, m_nchunks);
+                    Chunk *sw = &m_chunks[xn * m_nchunks + zn];
+                    sw->setNorthEast(&self);
+                    self.setSouthWest(sw);
+                }
+
+                if (x < xmax || xinc < 0) {
+                    xn = mod(x + 1, m_nchunks);
+                    Chunk *se = &m_chunks[xn * m_nchunks + zn];
+                    se->setNorthWest(&self);
+                    self.setSouthEast(se);
+                }
             }
 
-            if (z < zmax || zinc < 0)
-            {
+            if (z < zmax || zinc < 0) {
                 xn = xi;
                 zn = mod(z + 1, m_nchunks);
                 Chunk *n = &m_chunks[xn * m_nchunks + zn];
                 n->setSouth(&self);
                 self.setNorth(n);
+
+                if (x > xmin || xinc > 0) {
+                    xn = mod(x - 1, m_nchunks);
+                    Chunk *nw = &m_chunks[xn * m_nchunks + zn];
+                    nw->setSouthEast(&self);
+                    self.setNorthWest(nw);
+                }
+
+                if (x < xmax || xinc < 0) {
+                    xn = mod(x + 1, m_nchunks);
+                    Chunk *ne = &m_chunks[xn * m_nchunks + zn];
+                    ne->setSouthWest(&self);
+                    self.setNorthEast(ne);
+                }
             }
         }
     }
@@ -136,62 +178,69 @@ void World::update(const Vec3 &pos)
     i32 nxpos = (i32)floorf(pos.x / CHUNK_MAX_X);
     i32 nzpos = (i32)floorf(pos.z / CHUNK_MAX_Z);
 
-    if (nxpos == m_xpos && nzpos == m_zpos) {
-        _sortChunks(pos);
-        return;
+    if (nxpos != m_xpos) {
+        i32 xmin, xmax, zmin, zmax;
+        i32 xinc = nxpos - m_xpos;
+        if (xinc < 0) {
+            xmin = m_xoff + xinc;
+            xmax = m_xoff - 1;
+            zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
+        } else {
+            xmin = m_xoff + m_nchunks;
+            xmax = m_xoff + m_nchunks + xinc - 1;
+            zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
+        }
+        _loadNewChunks(xmax, xmin, zmax, zmin, xinc, 0);
+        m_xoff += xinc;
+        m_xpos = nxpos;
     }
 
-    i32 xmin, xmax, zmin, zmax;
-    i32 xinc = nxpos - m_xpos, zinc = nzpos - m_zpos;
-    m_xpos = nxpos, m_zpos = nzpos;
-
-    xmin = 0, xmax = -1, zmin = 0, zmax = -1;
-
-    if (zinc < 0)
-    {
-        zmin = m_zoff + zinc;
-        zmax = m_zoff - 1;
-        xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
+    if (nzpos != m_zpos) {
+        i32 xmin, xmax, zmin, zmax;
+        i32 zinc = nzpos - m_zpos;
+        m_xpos = nxpos, m_zpos = nzpos;
+        if (zinc < 0) {
+            zmin = m_zoff + zinc;
+            zmax = m_zoff - 1;
+            xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
+        } else {
+            zmin = m_zoff + m_nchunks;
+            zmax = m_zoff + m_nchunks + zinc - 1;
+            xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
+        }
+        _loadNewChunks(xmax, xmin, zmax, zmin, 0, zinc);
+        m_zoff += zinc;
+        m_zpos = nzpos;
     }
-    else if (zinc > 0)
-    {
-        zmin = m_zoff + m_nchunks;
-        zmax = m_zoff + m_nchunks + zinc - 1;
-        xmin = m_xoff, xmax = m_xoff + m_nchunks - 1;
-    }
-
-    _loadNewChunks(xmax, xmin, zmax, zmin, 0, zinc);
-    m_zoff += zinc;
-
-    xmin = 0, xmax = -1, zmin = 0, zmax = -1;
-
-    if (xinc < 0)
-    {
-        xmin = m_xoff + xinc;
-        xmax = m_xoff - 1;
-        zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
-    }
-    else if (xinc > 0)
-    {
-        xmin = m_xoff + m_nchunks;
-        xmax = m_xoff + m_nchunks + xinc - 1;
-        zmin = m_zoff, zmax = m_zoff + m_nchunks - 1;
-    }
-
-    _loadNewChunks(xmax, xmin, zmax, zmin, xinc, 0);
-    m_xoff += xinc;
 
     _sortChunks(pos);
+
+    u32 c = 0;
+    const i32 m = m_nchunks * m_nchunks;
+    for (i32 i = m - 1; i >= 0 && c < 16; i--) {
+        if (m_sortedChunks[i].ptr->getState() == NeedsUpdating) {
+            m_sortedChunks[i].ptr->update();
+            c ++;
+        }
+    }
 }
 
-void World::render(Camera &cam)
+void World::depthPass(const Shader &shader)
 {
-    Mat4 viewproj = cam.getProjectionMatrix() * cam.getViewMatrix();
-    m_shader.bind();
-    m_shader.uniform("viewproj", viewproj);
-    m_textureArray.bind();
-
     const i32 m = m_nchunks * m_nchunks;
-    for (i32 i = 0; i < m; i++)
-        m_sortedChunks[i].ptr->render(m_shader);
+    for (i32 i = 0; i < m; i++) {
+        m_sortedChunks[i].ptr->renderPrep(shader);
+        m_sortedChunks[i].ptr->renderOpaque(shader);
+    }
+}
+
+void World::renderPass(const Shader &shader)
+{
+    m_textureArray.bind();
+    const i32 m = m_nchunks * m_nchunks;
+    for (i32 i = 0; i < m; i++) {
+        m_sortedChunks[i].ptr->renderPrep(shader);
+        m_sortedChunks[i].ptr->renderOpaque(shader);
+        m_sortedChunks[i].ptr->renderTransparent(shader);
+    }
 }

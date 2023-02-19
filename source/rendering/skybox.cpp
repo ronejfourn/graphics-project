@@ -2,7 +2,7 @@
 #include "math/matrix.hpp"
 #include "utility/png.hpp"
 #include "rendering/skybox.hpp"
-#include "rendering/camera.hpp"
+#include "scene/camera.hpp"
 
 static constexpr f32 skyboxVertices[] = {
     -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,
@@ -26,8 +26,8 @@ static constexpr f32 skyboxVertices[] = {
 
 
 Skybox::Skybox(Paths p) :
-    m_vao(STATIC),
-    m_shader("../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl")
+    m_shader("../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl"),
+    m_vao(STATIC)
 {
     u32 width, height;
     glGenTextures(1, &m_texture);

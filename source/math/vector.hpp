@@ -2,14 +2,19 @@
 
 #include "common.hpp"
 
+union Vec3;
+union Vec4;
+
 union Vec3
 {
     struct {f32 x, y, z;};
     f32 v[3];
 
     Vec3() : v{0, 0, 0} {}
-    Vec3(f32 a) : v{a, a, a} {}
     Vec3(f32 x, f32 y, f32 z) : v{x, y, z} {}
+
+    explicit inline Vec3(f32 a) : v{a, a, a} {}
+    explicit inline Vec3(const Vec4 &);
 
     f32 &operator[] (i32 i)
     {
@@ -30,8 +35,10 @@ union Vec4
     f32 v[4];
 
     Vec4() : v{0, 0, 0, 1} {}
-    Vec4(f32 a) : v{a, a, a, a} {}
     Vec4(f32 x, f32 y, f32 z, f32 w = 1) : v{x, y, z, w} {}
+
+    explicit inline Vec4(f32 a) : v{a, a, a, a} {}
+    explicit inline Vec4(const Vec3 &);
 
     f32 &operator[] (i32 i)
     {
@@ -45,6 +52,9 @@ union Vec4
         return v[i];
     }
 };
+
+Vec3::Vec3(const Vec4 &v4) : v{v4.x, v4.y, v4.z} {}
+Vec4::Vec4(const Vec3 &v3) : v{v3.x, v3.y, v3.z, 1} {}
 
 inline Vec3 operator+ (const Vec3& a, const Vec3& b) {return {a.x + b.x, a.y + b.y, a.z + b.z};}
 inline Vec3 operator- (const Vec3& a, const Vec3& b) {return {a.x - b.x, a.y - b.y, a.z - b.z};}
