@@ -4,6 +4,7 @@
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 #include <X11/Xutil.h>
+#include <time.h>
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB     0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB     0x2092
@@ -209,6 +210,14 @@ void Platform::_swapInterval(i32 i)
 {
     ASSERT(X11.init, "X11 not initialized");
     glXSwapIntervalEXT(X11.dpy, X11.win, i);
+}
+
+void Platform::_sleep(u32 ms)
+{
+    i64 s = ms / 1000;
+    i64 n = (ms - s * 1000) * 10e5;
+    timespec ts = {s, n};
+    nanosleep(&ts, nullptr);
 }
 
 static int translateKeyEvent(XKeyEvent *ke)

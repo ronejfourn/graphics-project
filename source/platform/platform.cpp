@@ -32,6 +32,10 @@ void Platform::swapInterval(i32 i) {
     _swapInterval(i);
 }
 
+void Platform::sleep(u32 ms) {
+    _sleep(ms);
+}
+
 #if PLATFORM_X11
 #include "specific/x11platform.cpp"
 #elif PLATFORM_WIN32

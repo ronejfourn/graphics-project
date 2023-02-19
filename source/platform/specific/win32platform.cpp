@@ -7,6 +7,7 @@
 #define WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
+#include <timeapi.h>
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
@@ -39,6 +40,7 @@ void Platform::_init()
         return;
 
     SetProcessDPIAware();
+    timeBeginPeriod(1);
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
     LPCWSTR name = WC(PROJECT_TITLE);
@@ -123,6 +125,7 @@ void Platform::_init()
 
 void Platform::_destroy()
 {
+    timeEndPeriod(1);
     if (WIN.ctx) {
         wglMakeCurrent(WIN.hdc, nullptr);
         wglDeleteContext(WIN.ctx);
@@ -207,6 +210,10 @@ LRESULT wndproc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return TRUE;
     }
     return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
+void Platform::_sleep(u32 ms) {
+    Sleep(ms);
 }
 
 int translateKey(WPARAM ks)

@@ -34,6 +34,8 @@ project "graphics-project"
       "User32.lib"  ,
       "Opengl32.lib",
       "Gdi32.lib"   ,
+      "Kernel32.lib",
+      "Winmm.lib"
     }
 
   filter "system:linux"

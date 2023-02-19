@@ -6,32 +6,33 @@
 
 int main() {
     Platform &platform = Platform::instance();
-    platform.swapInterval(1);
+    platform.swapInterval(0);
 
     std::chrono::high_resolution_clock a;
+    std::chrono::duration<f64, std::milli> d;
+    f64 dt = 0;
 
     Scene &scene = Scene::instance();
     while (!platform.events.quit) {
         auto t1 = a.now();
 
         scene.update(platform.events);
-
-        auto t2 = a.now();
-
         scene.render();
-
-        auto t3 = a.now();
 
         platform.swapBuffers();
         platform.pollEvents();
 
-        auto t4 = a.now();
+        auto t2 = a.now();
 
-        std::chrono::duration<double, std::milli> d1 = t2 - t1;
-        std::chrono::duration<double, std::milli> d2 = t3 - t1;
-        std::chrono::duration<double, std::milli> d3 = t4 - t1;
+        d = t2 - t1;
+        dt = d.count();
 
-        // printf("update: %f\nrender: %f\ntotal: %f\n", d1.count(), d2.count(), d3.count());
+        if (dt < 16)
+            platform.sleep(16 - dt);
+
+        auto t3 = a.now();
+        d  = t3 - t1;
+        dt = d.count();
     }
 
     return 0;

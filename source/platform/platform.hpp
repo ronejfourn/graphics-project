@@ -11,6 +11,7 @@ public:
     void pollEvents();
     void swapBuffers();
     void swapInterval(i32 i);
+    void sleep(u32 ms);
 private:
     Platform();
     Platform(Platform&) = delete;
@@ -18,6 +19,7 @@ private:
 
     void _init();
     void _destroy();
+    void _sleep(u32 ms);
     void _pollEvents();
     void _swapBuffers();
     void _swapInterval(i32 i);
