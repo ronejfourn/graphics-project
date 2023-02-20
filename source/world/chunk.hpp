@@ -53,7 +53,7 @@ public:
     inline Chunk *getSouthEast() { return m_southeast; }
     inline Chunk *getNorthWest() { return m_northwest; }
     inline Chunk *getSouthWest() { return m_southwest; }
-    inline Vec3  getCenter() { return {m_origin.x + CHUNK_MAX_X / 2.0f, 0, m_origin.z + CHUNK_MAX_Z / 2.0f}; }
+    inline Vec3  getCenter() { return {m_origin.x + CHUNK_MAX_X / 2.0f, CHUNK_MAX_Y / 2.0f, m_origin.z + CHUNK_MAX_Z / 2.0f}; }
 
 private:
     Chunk(u8 t);

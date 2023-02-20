@@ -5,7 +5,7 @@
 static i32 W = DEFAULT_WINDOW_WIDTH;
 static i32 H = DEFAULT_WINDOW_HEIGHT;
 static const Vec3 DEF_CAMERA_POS(0, 140, 0);
-constexpr u32 RENDER_DISTANCE = 16;
+constexpr u32 RENDER_DISTANCE = 32;
 
 Scene &Scene::instance()
 {
@@ -80,10 +80,8 @@ void Scene::render()
     m_depthShader.uniform("sunViewProj", sunViewProj);
 
     // world shadow pass
-    glDisable(GL_CULL_FACE);
     sun.shadowMap.prepWrite();
     m_world.depthPass(m_depthShader);
-    glEnable(GL_CULL_FACE);
 
     // world render pass
     glViewport(0, 0, W, H);
@@ -99,7 +97,7 @@ void Scene::render()
     m_blockShader.uniform("sun.diffuse", sun.diffuse);
     m_blockShader.uniform("sun.direction", sun.direction);
 
-    m_world.renderPass(m_blockShader);
+    m_world.renderPass(m_blockShader, camViewProj);
 
     // draw skybox
     m_sky.render(m_camera);

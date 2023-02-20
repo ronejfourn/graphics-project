@@ -234,13 +234,42 @@ void World::depthPass(const Shader &shader)
     }
 }
 
-void World::renderPass(const Shader &shader)
+void World::renderPass(const Shader &shader, const Mat4 &vp)
 {
+    constexpr f32 hx = CHUNK_MAX_X / 2.0f;
+    constexpr f32 hy = CHUNK_MAX_Y / 2.0f;
+    constexpr f32 hz = CHUNK_MAX_Z / 2.0f;
+    const Vec4 e[8] = {
+        {+hx, +hy, +hz, 0},
+        {+hx, +hy, -hz, 0},
+        {+hx, -hy, +hz, 0},
+        {+hx, -hy, -hz, 0},
+        {-hx, +hy, +hz, 0},
+        {-hx, +hy, -hz, 0},
+        {-hx, -hy, +hz, 0},
+        {-hx, -hy, -hz, 0},
+    };
+
     m_textureArray.bind();
     const i32 m = m_nchunks * m_nchunks;
     for (i32 i = 0; i < m; i++) {
-        m_sortedChunks[i].ptr->renderPrep(shader);
-        m_sortedChunks[i].ptr->renderOpaque(shader);
-        m_sortedChunks[i].ptr->renderTransparent(shader);
+        auto ptr = m_sortedChunks[i].ptr;
+
+        Vec4 c = Vec4(ptr->getCenter());
+        bool visible = false;
+        for (int i = 0; i < 8; i ++) {
+            auto r = vp * (c + e[i]);
+            auto x = r.x / r.w;
+            if (r.w > 0 && x <= 1 && x >= -1) {
+                visible = true;
+                break;
+            }
+        }
+
+        if (visible) {
+            ptr->renderPrep(shader);
+            ptr->renderOpaque(shader);
+            ptr->renderTransparent(shader);
+        }
     }
 }

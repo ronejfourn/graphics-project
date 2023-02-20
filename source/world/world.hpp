@@ -8,6 +8,7 @@
 class Shader;
 class Chunk;
 struct ChunkDistPair;
+union Mat4;
 
 class World {
 public:
@@ -17,7 +18,7 @@ public:
     void generate(u64 seed, const Vec3 &pos);
     void update(const Vec3 &pos);
     void depthPass (const Shader &shader);
-    void renderPass(const Shader &shader);
+    void renderPass(const Shader &shader, const Mat4 &vp);
     const TextureArray &getTextureArray() { return m_textureArray; }
 private:
     i32 m_xpos, m_zpos;
