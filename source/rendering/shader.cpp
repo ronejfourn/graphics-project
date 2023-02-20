@@ -71,31 +71,27 @@ void Shader::bind() const
     glUseProgram(m_program);
 }
 
-void Shader::uniform(const std::string_view &name, Mat4 &mat) const
+void Shader::uniform(const std::string_view &name, Mat4 mat) const
 {
     i32 u = _uniformLocation(name);
-    ASSERT(u != -1, "invalid uniform name");
     glUniformMatrix4fv(u, 1, GL_TRUE, &mat[0][0]);
 }
 
 void Shader::uniform(const std::string_view &name, f32 a, f32 b) const
 {
     i32 u = _uniformLocation(name);
-    ASSERT(u != -1, "invalid uniform name");
     glUniform2f(u, a, b);
 }
 
-void Shader::uniform(const std::string_view &name, Vec3 &v3) const
+void Shader::uniform(const std::string_view &name, Vec3 v3) const
 {
     i32 u = _uniformLocation(name);
-    ASSERT(u != -1, "invalid uniform name");
     glUniform3f(u, v3.x, v3.y, v3.z);
 }
 
 void Shader::uniform(const std::string_view &name, i32 i) const
 {
     i32 u = _uniformLocation(name);
-    ASSERT(u != -1, "invalid uniform name");
     glUniform1i(u, i);
 }
 

@@ -25,7 +25,7 @@ public:
     ~Chunk() = default;
 
     static Chunk *dummy() {
-        static Chunk dummy(AIR);
+        static Chunk dummy(DIRT);
         return &dummy;
     }
 

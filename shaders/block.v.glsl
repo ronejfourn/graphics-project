@@ -2,16 +2,18 @@
 layout (location = 0) in uint aVert;
 
 uniform vec2 xz;
+uniform vec3 camPos;
 uniform mat4 camViewProj;
 uniform mat4 sunViewProj;
 
 #define ONES(n) ((1u << n) - 1u)
 
-out float aof;
-out vec3  nrm;
-out vec3  uvw;
-out vec4  lPos;
+out vec3 normal;
+out vec3 texCoord;
+out vec4 lsPos;
+out float aoFactor;
 out float flogz;
+out vec3 viewDir;
 
 float aoArr[4] = float[4](0.25f, 0.5f, 0.75f, 1.0f);
 
@@ -44,14 +46,16 @@ void main() {
     v = v >> 2;
     uint w  = v & ONES(8);
 
-    aof = aoArr[ao];
-    nrm = norms[n] * (1.0f - float(s) * 2.0f);
-    uvw = vec3(float((uv >> 1u) & 1u), float(uv & 1u), float(w));
+    aoFactor = aoArr[ao];
+    normal = norms[n] * (1.0f - float(s) * 2.0f);
+    texCoord = vec3(float((uv >> 1u) & 1u), float(uv & 1u), float(w));
 
     vec3 pos = vec3(x + xz.x, y, z + xz.y);
     gl_Position = camViewProj * vec4(pos, 1.0f);
-    lPos = sunViewProj * vec4(pos, 1.0f);
+    lsPos = sunViewProj * vec4(pos, 1.0f);
 
     gl_Position.z = log2(max(1e-6, 1.0 + gl_Position.w)) * FCOEF - 1.0;
     flogz = 1.0 + gl_Position.w;
+
+    viewDir = normalize(pos - camPos);
 }

@@ -37,7 +37,7 @@ ShadowMap::~ShadowMap()
     glDeleteFramebuffers(1, &m_framebuffer);
 }
 
-void ShadowMap::prepWrite() {
+void ShadowMap::prepWrite() const {
     glViewport(0, 0, m_width, m_height);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glClear(GL_DEPTH_BUFFER_BIT);

@@ -18,6 +18,7 @@ public:
     void update(const Vec3 &pos);
     void depthPass (const Shader &shader);
     void renderPass(const Shader &shader);
+    const TextureArray &getTextureArray() { return m_textureArray; }
 private:
     i32 m_xpos, m_zpos;
     i32 m_xoff, m_zoff;

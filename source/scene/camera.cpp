@@ -1,7 +1,7 @@
 #include "camera.hpp"
 #include "math/matrix.hpp"
 
-constexpr f32 SPEED       =  25 ;
+constexpr f32 SPEED       =  0.1f ;
 constexpr f32 SENSITIVITY =  0.1f ;
 
 Camera::Camera(Vec3 pos, f32 fov, f32 ar, Vec3 up, f32 yaw, f32 pitch, f32 zn, f32 zf)

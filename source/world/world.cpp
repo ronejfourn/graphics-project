@@ -17,7 +17,7 @@ static i32 mod(i32 o, i32 n)
 }
 
 World::World(u32 nchunks) :
-    m_textureArray(BLOCK_TEXTURE_FILE, BLOCK_TILES_PER_ROW, BLOCK_TILES_PER_COLUMN)
+    m_textureArray(0, BLOCK_TEXTURE_FILE, BLOCK_TILES_PER_ROW, BLOCK_TILES_PER_COLUMN)
 {
     m_nchunks = nchunks;
     m_chunks = new Chunk[nchunks * nchunks];
@@ -217,7 +217,7 @@ void World::update(const Vec3 &pos)
 
     u32 c = 0;
     const i32 m = m_nchunks * m_nchunks;
-    for (i32 i = m - 1; i >= 0 && c < 16; i--) {
+    for (i32 i = m - 1; i >= 0 && c < 8; i--) {
         if (m_sortedChunks[i].ptr->getState() == NeedsUpdating) {
             m_sortedChunks[i].ptr->update();
             c ++;

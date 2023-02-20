@@ -1,17 +1,17 @@
 #pragma once
 
 #include "platform/events.hpp"
-#include "rendering/skybox.hpp"
 #include "rendering/shader.hpp"
 #include "rendering/shadowMap.hpp"
 #include "world/world.hpp"
 #include "scene/camera.hpp"
+#include "scene/sky.hpp"
 
 class Scene
 {
 public:
     static Scene &instance();
-    void update(Events &e);
+    void update(Events &e, f32 dt);
     void render();
 private:
     Scene();
@@ -20,7 +20,6 @@ private:
     Camera m_camera;
     Shader m_blockShader;
     Shader m_depthShader;
-    Skybox m_skybox;
-    ShadowMap m_shadowMap;
     World m_world;
+    Sky m_sky;
 };

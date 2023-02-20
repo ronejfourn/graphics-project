@@ -47,9 +47,9 @@ class Camera{
         void setFOV(f32 fov);
         void setAspectRatio(f32 ar);
         void setPlanes(f32 zn, f32 zf);
-        Vec3 getPosition() const {return m_position;}
-        Mat4 getViewMatrix() const {return m_view;}
-        Mat4 getProjectionMatrix() const {return m_proj;}
+        const Vec3 &getPosition() const {return m_position;}
+        const Mat4 &getViewMatrix() const {return m_view;}
+        const Mat4 &getProjectionMatrix() const {return m_proj;}
         void processKeyboard(CameraMovement, f32);
         void processMouseMovement(f32 xoffset, f32 yoffset);
         void updateCamera();

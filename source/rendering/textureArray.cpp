@@ -3,7 +3,7 @@
 #include "glad/glad.h"
 #include <memory.h>
 
-TextureArray::TextureArray(const char *path, int x, int y)
+TextureArray::TextureArray(u32 u, const char *path, int x, int y)
 {
     u32 imgW, imgH;
 
@@ -17,8 +17,10 @@ TextureArray::TextureArray(const char *path, int x, int y)
     u32 tileH = imgH / tileY;
 
     u32 imageCount = tileX * tileY;
+    unit = u;
 
     glGenTextures(1, &id);
+    glActiveTexture(GL_TEXTURE0 + u);
     glBindTexture(GL_TEXTURE_2D_ARRAY, id);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, tileW, tileH, imageCount, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
@@ -45,9 +47,11 @@ TextureArray::TextureArray(const char *path, int x, int y)
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     delete[] tile;
+    glActiveTexture(GL_TEXTURE0);
 }
 
 void TextureArray::bind()
 {
+    glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, id);
 }

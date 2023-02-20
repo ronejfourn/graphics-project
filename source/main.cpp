@@ -9,21 +9,20 @@ int main() {
     platform.swapInterval(0);
 
     std::chrono::high_resolution_clock a;
-    std::chrono::duration<f64, std::milli> d;
-    f64 dt = 0;
+    std::chrono::duration<f32, std::milli> d;
+    f32 dt = 0;
 
     Scene &scene = Scene::instance();
     while (!platform.events.quit) {
         auto t1 = a.now();
 
-        scene.update(platform.events);
+        scene.update(platform.events, dt);
         scene.render();
 
         platform.swapBuffers();
         platform.pollEvents();
 
         auto t2 = a.now();
-
         d = t2 - t1;
         dt = d.count();
 

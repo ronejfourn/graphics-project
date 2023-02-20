@@ -56,6 +56,11 @@ union Vec4
 Vec3::Vec3(const Vec4 &v4) : v{v4.x, v4.y, v4.z} {}
 Vec4::Vec4(const Vec3 &v3) : v{v3.x, v3.y, v3.z, 1} {}
 
+inline Vec3 min(const Vec3& a, const Vec3&b) {return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)}; }
+inline Vec4 min(const Vec4& a, const Vec4&b) {return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)}; }
+inline Vec3 max(const Vec3& a, const Vec3&b) {return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)}; }
+inline Vec4 max(const Vec4& a, const Vec4&b) {return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)}; }
+
 inline Vec3 operator+ (const Vec3& a, const Vec3& b) {return {a.x + b.x, a.y + b.y, a.z + b.z};}
 inline Vec3 operator- (const Vec3& a, const Vec3& b) {return {a.x - b.x, a.y - b.y, a.z - b.z};}
 inline Vec3 operator- (const Vec3& a) {return {-a.x , -a.y , -a.z};}

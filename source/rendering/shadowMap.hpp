@@ -11,10 +11,10 @@ public:
     );
     ~ShadowMap();
 
-    inline u32 getTextureUnit() { return m_textureUnit; }
-    inline u32 getWidth () { return m_width ; }
-    inline u32 getHeight() { return m_height; }
-    void prepWrite();
+    inline u32 getTextureUnit() const { return m_textureUnit; }
+    inline u32 getWidth () const { return m_width ; }
+    inline u32 getHeight() const { return m_height; }
+    void prepWrite() const;
 private:
     i32 m_width, m_height;
     u32 m_framebuffer;
