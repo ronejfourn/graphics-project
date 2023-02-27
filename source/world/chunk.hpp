@@ -24,16 +24,11 @@ public:
      Chunk();
     ~Chunk() = default;
 
-    static Chunk *dummy() {
-        static Chunk dummy(DIRT);
-        return &dummy;
-    }
-
     void generate(i32 x, i32 z, FBMConfig &fc);
     void update();
     void renderPrep(const Shader &shader);
-    void renderOpaque(const Shader &shader);
-    void renderTransparent(const Shader &shader);
+    void renderOpaque();
+    void renderTransparent();
 
     void setEast (Chunk *p);
     void setWest (Chunk *p);
@@ -43,6 +38,7 @@ public:
     void setSouthEast(Chunk *p);
     void setNorthWest(Chunk *p);
     void setSouthWest(Chunk *p);
+    void resetNeighbours();
 
     inline ChunkState getState() { return m_state; }
     inline Chunk *getEast () { return m_east; }
@@ -53,7 +49,7 @@ public:
     inline Chunk *getSouthEast() { return m_southeast; }
     inline Chunk *getNorthWest() { return m_northwest; }
     inline Chunk *getSouthWest() { return m_southwest; }
-    inline Vec3  getCenter() { return {m_origin.x + CHUNK_MAX_X / 2.0f, CHUNK_MAX_Y / 2.0f, m_origin.z + CHUNK_MAX_Z / 2.0f}; }
+    inline const Vec3 &getCenter() const { return m_center; }
 
 private:
     Chunk(u8 t);
@@ -63,7 +59,7 @@ private:
     Chunk *m_northeast, *m_northwest;
 
     ChunkState m_state;
-    Vec3 m_renderOrigin, m_origin;
+    Vec3 m_renderOrigin, m_origin, m_center;
     u8 m_blocks[CHUNK_MAX_X][CHUNK_MAX_Z][CHUNK_MAX_Y];
     VertexArray m_vao;
     u32 m_opaquevertcount;
@@ -78,4 +74,9 @@ private:
     /// Makes sure tree spawns near the centre so leaves don't get cut off
     /// </summary>
     bool _checkForOakTree(i32 x, i32 y, i32 z);
+
+    static Chunk *s_dummy() {
+        static Chunk dummy(DIRT);
+        return &dummy;
+    }
 };

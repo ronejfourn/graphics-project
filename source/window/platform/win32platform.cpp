@@ -1,5 +1,5 @@
-#include "platform/platform.hpp"
-#include "platform/events.hpp"
+#include "window/window.hpp"
+#include "window/events.hpp"
 
 #ifndef UNICODE
 #define UNICODE
@@ -16,7 +16,6 @@
 
 static struct
 {
-    bool init = false;
     HWND hwnd = nullptr;
     HGLRC ctx = nullptr;
     HDC hdc   = nullptr;
@@ -34,61 +33,71 @@ typedef BOOL (WINAPI * wglSwapIntervalEXTProc) (int interval);
 static wglCreateContextAttribsARBProc wglCreateContextAttribsARB;
 static wglSwapIntervalEXTProc wglSwapIntervalEXT = dummySwapinterval;
 
-void Platform::_init()
+void Window::_initialize(const Window::Config &cfg)
 {
-    if (WIN.init)
-        return;
-
     SetProcessDPIAware();
     timeBeginPeriod(1);
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
-    LPCWSTR name = WC(PROJECT_TITLE);
+    char *t = (char *)cfg.title;
+    int len = MultiByteToWideChar(CP_UTF8, 0, t, -1, nullptr, 0);
+    if (len <= 0) die("WIN32: MultiByteToWideChar failed (%u)", GetLastError());
+
+    LPWSTR title = (LPWSTR)HeapAlloc(GetProcessHeap(), 0, sizeof(wchar_t) * len);;
+    if (!title) die("WIN32: HeapAlloc failed (%u)", GetLastError());
+    len = MultiByteToWideChar(CP_UTF8, 0, t, -1, title, len);
+    if (len <= 0) die("WIN32: MultiByteToWideChar failed (%u)", GetLastError());
 
     WNDCLASSW wc = {};
     wc.hInstance = hInstance;
     wc.lpfnWndProc = wndproc;
-    wc.lpszClassName = name;
+    wc.lpszClassName = title;
     wc.hCursor = LoadCursorW(hInstance, IDC_ARROW);
     wc.style = CS_OWNDC;
     if (!RegisterClassW(&wc))
-        die("WIN32: failed to register class");
+        die("WIN32: failed to register class (%u)", GetLastError());
 
-    RECT rect = {0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT};
+    RECT rect = {0, 0, cfg.width, cfg.height};
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
 
     events.window.w = rect.right;
     events.window.h = rect.bottom;
 
-    WIN.hwnd = CreateWindowExW(0, name, name,
+    WIN.hwnd = CreateWindowExW(0, title, title,
             WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
             rect.right, rect.bottom, nullptr, FALSE, hInstance, nullptr);
     if (!WIN.hwnd)
-        die("WIN32: failed to create window");
+        die("WIN32: failed to create window (%u)", GetLastError());
+    HeapFree(GetProcessHeap(), 0, (LPVOID)title);
 
     WIN.hdc = GetDC(WIN.hwnd);
     if (!WIN.hdc)
-        die("WIN32: failed to get DC");
+        die("WIN32: failed to get DC (%u)", GetLastError());
 
     PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 24;
-    pfd.cStencilBits = 8;
-    pfd.iLayerType = PFD_MAIN_PLANE;
+    pfd.nSize        = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion     = 1;
+    pfd.dwFlags      = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
+    if (cfg.doublebuffer) pfd.dwFlags |= PFD_DOUBLEBUFFER;
+    pfd.iPixelType   = PFD_TYPE_RGBA;
+    pfd.cColorBits   = cfg.redBits + cfg.greenBits + cfg.blueBits;
+    pfd.cRedBits     = cfg.redBits;
+    pfd.cGreenBits   = cfg.greenBits;
+    pfd.cBlueBits    = cfg.blueBits;
+    pfd.cAlphaBits   = cfg.alphaBits;
+    pfd.cDepthBits   = cfg.depthBits;
+    pfd.cStencilBits = cfg.stencilBits;
+    pfd.iLayerType   = PFD_MAIN_PLANE;
 
     int pxf = ChoosePixelFormat(WIN.hdc, &pfd);
     if (!pxf)
-        die("WIN32: failed to choose pixel format");
+        die("WIN32: failed to choose pixel format (%u)", GetLastError());
     if (!SetPixelFormat(WIN.hdc, pxf, &pfd))
-        die("WIN32: failed to set pixel format");
+        die("WIN32: failed to set pixel format (%u)", GetLastError());
 
     auto tmp = wglCreateContext(WIN.hdc);
     if (!tmp)
-        die("WGL: failed to create context");
+        die("WGL: failed to create context (%u)", GetLastError());
     wglMakeCurrent(WIN.hdc, tmp);
     wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc)
         wglGetProcAddress("wglCreateContextAttribsARB");
@@ -96,18 +105,18 @@ void Platform::_init()
     wglDeleteContext(tmp);
 
     if (!wglCreateContextAttribsARB)
-        die("WGL: wglCreateContextAttribsARB not found");
+        die("WGL: wglCreateContextAttribsARB not found (%u)", GetLastError());
 
     int ca[] = {
-        WGL_CONTEXT_MAJOR_VERSION_ARB, OPENGL_VERSION_MAJOR,
-        WGL_CONTEXT_MINOR_VERSION_ARB, OPENGL_VERSION_MINOR,
+        WGL_CONTEXT_MAJOR_VERSION_ARB, cfg.openglMajor,
+        WGL_CONTEXT_MINOR_VERSION_ARB, cfg.openglMinor,
         WGL_CONTEXT_PROFILE_MASK_ARB , WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
         0,
     };
 
     WIN.ctx = wglCreateContextAttribsARB(WIN.hdc, nullptr, ca);
     if (!WIN.ctx)
-        die("WGL: failed to create context");
+        die("WGL: failed to create context (%u)", GetLastError());
     wglMakeCurrent(WIN.hdc, WIN.ctx);
 
     wglSwapIntervalEXT = (wglSwapIntervalEXTProc)
@@ -119,11 +128,9 @@ void Platform::_init()
 
     UpdateWindow(WIN.hwnd);
     ShowWindow(WIN.hwnd, SW_SHOW);
-
-    WIN.init = true;
 }
 
-void Platform::_destroy()
+void Window::_terminate()
 {
     timeEndPeriod(1);
     if (WIN.ctx) {
@@ -135,24 +142,21 @@ void Platform::_destroy()
     WIN.hwnd  = nullptr;
     WIN.hdc   = nullptr;
     WIN.ctx   = nullptr;
-    WIN.init  = false;
 }
 
-void Platform::_pollEvents()
+void Window::_pollEvents()
 {
-    ASSERT(WIN.init, "WIN32 not initialized");
     MSG msg = {0};
-	while (PeekMessageW(&msg, WIN.hwnd, 0, 0, PM_REMOVE))
+    while (PeekMessageW(&msg, WIN.hwnd, 0, 0, PM_REMOVE))
         DispatchMessageW(&msg);
 }
 
-void Platform::_swapBuffers()
+void Window::_swapBuffers()
 {
-    ASSERT(WIN.init, "WIN32 not initialized");
     SwapBuffers(WIN.hdc);
 }
 
-void Platform::_swapInterval(i32 i)
+void Window::_swapInterval(i32 i)
 {
     wglSwapIntervalEXT(i);
 }
@@ -160,51 +164,51 @@ void Platform::_swapInterval(i32 i)
 LRESULT wndproc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     i32 key;
-	Events *ev = (Events *)GetPropW(hwnd, L"BG");
+    Events *ev = (Events *)GetPropW(hwnd, L"BG");
     switch (msg) {
-		case WM_CLOSE:
-		case WM_QUIT:
-			ev->quit = true;
-			return FALSE;
-		case WM_SIZE:
-			ev->window.resized = true;
-			ev->window.w = LOWORD(lParam);
-			ev->window.h = HIWORD(lParam);
-			return FALSE;
-		case WM_LBUTTONDOWN:
-			ev->btnStates[BUTTON_LEFT] = BITSET(ev->btnStates[BUTTON_LEFT], 0);
-			return FALSE;
-		case WM_MBUTTONDOWN:
-			ev->btnStates[BUTTON_MIDDLE] = BITSET(ev->btnStates[BUTTON_MIDDLE], 0);
-			return FALSE;
-		case WM_RBUTTONDOWN:
-			ev->btnStates[BUTTON_RIGHT] = BITSET(ev->btnStates[BUTTON_RIGHT], 0);
-			return FALSE;
-		case WM_LBUTTONUP:
-			ev->btnStates[BUTTON_LEFT] = BITRESET(ev->btnStates[BUTTON_LEFT], 0);
-			return FALSE;
-		case WM_MBUTTONUP:
-			ev->btnStates[BUTTON_MIDDLE] = BITRESET(ev->btnStates[BUTTON_MIDDLE], 0);
-			return FALSE;
-		case WM_RBUTTONUP:
-			ev->btnStates[BUTTON_RIGHT] = BITRESET(ev->btnStates[BUTTON_RIGHT], 0);
-			return FALSE;
-		case WM_KEYDOWN:
-			key = translateKey(wParam);
-			ev->keyStates[key] = BITSET(ev->keyStates[key], 0);
-			return FALSE;
-		case WM_KEYUP:
-			key = translateKey(wParam);
-			ev->keyStates[key] = BITRESET(ev->keyStates[key], 0);
-			return FALSE;
-		case WM_MOUSEMOVE:
-			ev->cursor.x = (int)(short)LOWORD(lParam);
-			ev->cursor.y = (int)(short)HIWORD(lParam);
-			ev->cursor.y = ev->window.h - ev->cursor.y;
-			return FALSE;
-		case WM_MOUSEWHEEL:
-			ev->wheel = HIWORD(wParam);
-			return FALSE;
+        case WM_CLOSE:
+        case WM_QUIT:
+            ev->quit = true;
+            return FALSE;
+        case WM_SIZE:
+            ev->window.resized = true;
+            ev->window.w = LOWORD(lParam);
+            ev->window.h = HIWORD(lParam);
+            return FALSE;
+        case WM_LBUTTONDOWN:
+            ev->btnStates[BUTTON_LEFT] = BITSET(ev->btnStates[BUTTON_LEFT], 0);
+            return FALSE;
+        case WM_MBUTTONDOWN:
+            ev->btnStates[BUTTON_MIDDLE] = BITSET(ev->btnStates[BUTTON_MIDDLE], 0);
+            return FALSE;
+        case WM_RBUTTONDOWN:
+            ev->btnStates[BUTTON_RIGHT] = BITSET(ev->btnStates[BUTTON_RIGHT], 0);
+            return FALSE;
+        case WM_LBUTTONUP:
+            ev->btnStates[BUTTON_LEFT] = BITRESET(ev->btnStates[BUTTON_LEFT], 0);
+            return FALSE;
+        case WM_MBUTTONUP:
+            ev->btnStates[BUTTON_MIDDLE] = BITRESET(ev->btnStates[BUTTON_MIDDLE], 0);
+            return FALSE;
+        case WM_RBUTTONUP:
+            ev->btnStates[BUTTON_RIGHT] = BITRESET(ev->btnStates[BUTTON_RIGHT], 0);
+            return FALSE;
+        case WM_KEYDOWN:
+            key = translateKey(wParam);
+            ev->keyStates[key] = BITSET(ev->keyStates[key], 0);
+            return FALSE;
+        case WM_KEYUP:
+            key = translateKey(wParam);
+            ev->keyStates[key] = BITRESET(ev->keyStates[key], 0);
+            return FALSE;
+        case WM_MOUSEMOVE:
+            ev->cursor.x = (int)(short)LOWORD(lParam);
+            ev->cursor.y = (int)(short)HIWORD(lParam);
+            ev->cursor.y = ev->window.h - ev->cursor.y;
+            return FALSE;
+        case WM_MOUSEWHEEL:
+            ev->wheel = HIWORD(wParam);
+            return FALSE;
         case WM_SETCURSOR:
             SetCursor(LoadCursorW(NULL, IDC_ARROW));
             return TRUE;
@@ -212,7 +216,7 @@ LRESULT wndproc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
-void Platform::_sleep(u32 ms) {
+void Window::_sleep(u32 ms) {
     Sleep(ms);
 }
 

@@ -25,7 +25,7 @@ static inline u8 calcAO(u8 s1, u8 s2, u8 co) {
     return 3 - (s1 + s2 + co);
 }
 
-static inline u32 pack(u16 x, u16 y, u16 z, u8 n, u8 uv, u8 ao, u8 t)
+static inline u32 pack(u32 x, u32 y, u32 z, u8 n, u8 uv, u8 ao, u8 t)
 {
     u32 r = ((x  & ONES(4)) <<  0) |
             ((z  & ONES(4)) <<  4) |
@@ -51,7 +51,7 @@ enum {
     N_NOR = _Z_,
 };
 
-void fillVerts(u32 *verts, u32 &count, u16 x, u16 y, u16 z, u8 c, const Surrounding &su)
+void fillVerts(u32 *verts, u32 &count, u32 x, u32 y, u32 z, u8 c, const Surrounding &su)
 {
     ASSERT(c != AIR && c < _BLOCK_TYPE_MAX_, "invalid block type");
     u8 t = blockIndex[c].t;

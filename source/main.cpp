@@ -1,38 +1,43 @@
-#include "platform/platform.hpp"
+#include "window/window.hpp"
 #include "scene/scene.hpp"
+#include "glad/glad.h"
 
 #include <chrono>
 #include <cstdio>
 
 int main() {
-    Platform &platform = Platform::instance();
-    platform.swapInterval(0);
+    Window::Config cfg = { "Block Game" };
+    Window::initialize(cfg);
+    if (!gladLoadGL())
+        die("failed to init glad");
 
-    std::chrono::high_resolution_clock a;
-    std::chrono::duration<f32, std::milli> d;
-    f32 dt = 0;
+    Window::swapInterval(0);
 
-    Scene &scene = Scene::instance();
-    while (!platform.events.quit) {
-        auto t1 = a.now();
+    std::chrono::high_resolution_clock clock;
+    f32 deltaTime = 0;
 
-        scene.update(platform.events, dt);
+    auto diff = [&clock](auto then) -> f32 {
+        auto now = clock.now();
+        std::chrono::duration<f32, std::milli> d = now - then;
+        return d.count();
+    };
+
+    Scene scene;
+    while (!Window::shouldClose()) {
+        auto t1 = clock.now();
+
+        auto events = Window::pollEvents();
+        scene.update(events, deltaTime);
         scene.render();
+        Window::swapBuffers();
 
-        platform.swapBuffers();
-        platform.pollEvents();
-
-        auto t2 = a.now();
-        d = t2 - t1;
-        dt = d.count();
-
-        if (dt < 16)
-            platform.sleep(16 - dt);
-
-        auto t3 = a.now();
-        d  = t3 - t1;
-        dt = d.count();
+        deltaTime = diff(t1);
+        if (deltaTime < 16)
+            Window::sleep(16 - deltaTime);
+        deltaTime = diff(t1);
     }
+
+    Window::terminate();
 
     return 0;
 }

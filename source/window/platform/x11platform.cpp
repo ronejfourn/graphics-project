@@ -1,48 +1,40 @@
-#include "platform/events.hpp"
-#include "platform/platform.hpp"
-
-#include <X11/Xlib.h>
-#include <GL/glx.h>
-#include <X11/Xutil.h>
-#include <time.h>
+#include "window/window.hpp"
+#include "window/events.hpp"
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB     0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB     0x2092
 #define GLX_CONTEXT_PROFILE_MASK_ARB      0x9126
 #define GLX_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
 
-static struct
-{
-    bool init = false;
-    Display *dpy = nullptr;
-    GLXContext ctx = nullptr;
-    Window win = 0;
-} X11;
+#include <time.h>
+namespace X11 {
+    #include <X11/Xlib.h>
+    #include <GL/glx.h>
+    #include <X11/Xutil.h>
 
-// TODO
-// - cleanup
-// - check for extensions
+    static Display *dpy = nullptr;
+    static GLXContext ctx = nullptr;
+    static Window win = 0;
+}
 
-static void dummySwapInterval(Display *dpy, GLXDrawable drawable, int interval) {}
-static int translateKeyEvent(XKeyEvent *ke);
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+static void dummySwapInterval(X11::Display *dpy, X11::GLXDrawable drawable, int interval) { (void)dpy, (void)drawable, (void)interval; }
+static int translateKeyEvent(X11::XKeyEvent *ke);
+typedef X11::GLXContext (*glXCreateContextAttribsARBProc)(X11::Display*, X11::GLXFBConfig, X11::GLXContext, Bool, const int*);
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
-typedef void (*glXSwapIntervalEXTProc)(Display *dpy, GLXDrawable drawable, int interval);
+typedef void (*glXSwapIntervalEXTProc)(X11::Display *dpy, X11::GLXDrawable drawable, int interval);
 static glXSwapIntervalEXTProc glXSwapIntervalEXT;
 
-void Platform::_init()
+void Window::_initialize(const Window::Config &cfg)
 {
-    if (X11.init)
-        return;
-
-    X11.dpy = XOpenDisplay(NULL);
-    if (!X11.dpy)
+    using namespace X11;
+    X11::dpy = XOpenDisplay(NULL);
+    if (!X11::dpy)
         die("X11: failed to open display");
 
-    i32 scr = DefaultScreen(X11.dpy);
+    i32 scr = DefaultScreen(X11::dpy);
     bool ok;
     int maj = 0, min = 0;
-    ok = glXQueryVersion(X11.dpy, &maj, &min);
+    ok = glXQueryVersion(X11::dpy, &maj, &min);
     ok &= (maj > 1) || (maj == 1 && min >= 4);
     if (!ok)
         die("need GLX version >= 1.4");
@@ -52,47 +44,47 @@ void Platform::_init()
         GLX_RENDER_TYPE  , GLX_RGBA_BIT,
         GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
         GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_DOUBLEBUFFER , 1,
-        GLX_RED_SIZE     , 8,
-        GLX_GREEN_SIZE   , 8,
-        GLX_BLUE_SIZE    , 8,
-        GLX_ALPHA_SIZE   , 8,
-        GLX_DEPTH_SIZE   , 24,
-        GLX_STENCIL_SIZE , 8,
+        GLX_DOUBLEBUFFER , cfg.doublebuffer,
+        GLX_RED_SIZE     , cfg.redBits,
+        GLX_GREEN_SIZE   , cfg.greenBits,
+        GLX_BLUE_SIZE    , cfg.blueBits,
+        GLX_ALPHA_SIZE   , cfg.alphaBits,
+        GLX_DEPTH_SIZE   , cfg.depthBits,
+        GLX_STENCIL_SIZE , cfg.stencilBits,
         None
     };
 
     int n;
-    GLXFBConfig *fbcp = glXChooseFBConfig(X11.dpy, scr, fba, &n);
+    GLXFBConfig *fbcp = glXChooseFBConfig(X11::dpy, scr, fba, &n);
     if (!fbcp)
         die("GLX: no matching FB config found");
     GLXFBConfig fbc = fbcp[0];
     XFree(fbcp);
 
     XVisualInfo *vip = nullptr, vi;
-    vip = glXGetVisualFromFBConfig(X11.dpy, fbc);
+    vip = glXGetVisualFromFBConfig(X11::dpy, fbc);
     vi  = *vip;
     XFree(vip);
 
-    Window root = RootWindow(X11.dpy, vi.screen);
+    X11::Window root = RootWindow(X11::dpy, vi.screen);
     XSetWindowAttributes swa;
-    swa.colormap = XCreateColormap(X11.dpy, root, vi.visual, AllocNone);
+    swa.colormap = XCreateColormap(X11::dpy, root, vi.visual, AllocNone);
     swa.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask |
         PointerMotionMask | StructureNotifyMask;
     u32 cwm = CWColormap | CWEventMask;
 
-    X11.win = XCreateWindow(X11.dpy, root, 0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
+    X11::win = XCreateWindow(X11::dpy, root, 0, 0, cfg.width, cfg.height,
             0, vi.depth, InputOutput, vi.visual, cwm, &swa);
-    if (!X11.win)
+    if (!X11::win)
         die("X11: could not create window");
 
     XTextProperty tp;
-    char *t = (char*)PROJECT_TITLE;
+    char *t = (char*)cfg.title;
     XStringListToTextProperty(&t, 1, &tp);
-    XSetWMName(X11.dpy, X11.win, &tp);
+    XSetWMName(X11::dpy, X11::win, &tp);
 
-    Atom WM_DELETE_WINDOW = XInternAtom(X11.dpy, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(X11.dpy, X11.win, &WM_DELETE_WINDOW, 1);
+    Atom WM_DELETE_WINDOW = XInternAtom(X11::dpy, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(X11::dpy, X11::win, &WM_DELETE_WINDOW, 1);
 
     glXSwapIntervalEXT = (glXSwapIntervalEXTProc)
         glXGetProcAddress((const GLubyte *)"glXSwapIntervalEXT");
@@ -105,48 +97,46 @@ void Platform::_init()
         die("GLX: glXCreateContextAttribsARB not found");
 
     int ca[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, OPENGL_VERSION_MAJOR,
-        GLX_CONTEXT_MINOR_VERSION_ARB, OPENGL_VERSION_MINOR,
+        GLX_CONTEXT_MAJOR_VERSION_ARB, cfg.openglMajor,
+        GLX_CONTEXT_MINOR_VERSION_ARB, cfg.openglMinor,
         GLX_CONTEXT_PROFILE_MASK_ARB , GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
         None,
     };
 
-    X11.ctx = glXCreateContextAttribsARB(X11.dpy, fbc, 0, True, ca);
-    XSync(X11.dpy, False);
-    if (!X11.ctx)
+    X11::ctx = glXCreateContextAttribsARB(X11::dpy, fbc, 0, True, ca);
+    XSync(X11::dpy, False);
+    if (!X11::ctx)
         die("GLX: could not create context");
 
-    glXMakeCurrent(X11.dpy, X11.win, X11.ctx);
+    glXMakeCurrent(X11::dpy, X11::win, X11::ctx);
 
-    XMapWindow(X11.dpy, X11.win);
-    XSync(X11.dpy, False);
-    X11.init = true;
+    XMapWindow(X11::dpy, X11::win);
+    XSync(X11::dpy, False);
 }
 
-void Platform::_destroy()
+void Window::_terminate()
 {
-    if (X11.dpy) {
-        if (X11.ctx) {
-            glXMakeCurrent(X11.dpy, 0, 0);
-            glXDestroyContext(X11.dpy, X11.ctx);
+    if (X11::dpy) {
+        if (X11::ctx) {
+            glXMakeCurrent(X11::dpy, 0, 0);
+            glXDestroyContext(X11::dpy, X11::ctx);
         }
-        if (X11.win) XDestroyWindow(X11.dpy, X11.win);
-        XCloseDisplay(X11.dpy);
+        if (X11::win) XDestroyWindow(X11::dpy, X11::win);
+        XCloseDisplay(X11::dpy);
     }
-    X11.dpy = nullptr;
-    X11.ctx = nullptr;
-    X11.win = 0;
-    X11.init = false;
+    X11::dpy = nullptr;
+    X11::ctx = nullptr;
+    X11::win = 0;
 }
 
-void Platform::_pollEvents()
+void Window::_pollEvents()
 {
-    ASSERT(X11.init, "X11 not initialized");
+    using namespace X11;
     XEvent xe;
-    XPending(X11.dpy);
+    XPending(X11::dpy);
 
-    while(QLength(X11.dpy)) {
-        XNextEvent(X11.dpy, &xe);
+    while(QLength(X11::dpy)) {
+        XNextEvent(X11::dpy, &xe);
         int key = 0;
         int btn = 0;
 
@@ -157,9 +147,9 @@ void Platform::_pollEvents()
                 break;
             case KeyRelease:
                 key = translateKeyEvent(&xe.xkey);
-                if (XEventsQueued(X11.dpy, QueuedAfterReading)) {
+                if (XEventsQueued(X11::dpy, QueuedAfterReading)) {
                     XEvent nxt;
-                    XPeekEvent(X11.dpy, &nxt);
+                    XPeekEvent(X11::dpy, &nxt);
                     if (nxt.type == KeyPress && nxt.xkey.keycode == xe.xkey.keycode && nxt.xkey.window == xe.xkey.window)
                         if (nxt.xkey.time - xe.xkey.time < 20)
                             break;
@@ -187,7 +177,7 @@ void Platform::_pollEvents()
                 events.cursor.y = events.window.h - xe.xmotion.y;
                 break;
             case ConfigureNotify:
-                if (events.window.w != xe.xconfigure.width || events.window.h != xe.xconfigure.height) {
+                if (events.window.w != (u32)xe.xconfigure.width || events.window.h != (u32)xe.xconfigure.height) {
                     events.window.resized = true;
                     events.window.w = xe.xconfigure.width;
                     events.window.h = xe.xconfigure.height;
@@ -200,19 +190,17 @@ void Platform::_pollEvents()
     }
 }
 
-void Platform::_swapBuffers()
+void Window::_swapBuffers()
 {
-    ASSERT(X11.init, "X11 not initialized");
-    glXSwapBuffers(X11.dpy, X11.win);
+    glXSwapBuffers(X11::dpy, X11::win);
 }
 
-void Platform::_swapInterval(i32 i)
+void Window::_swapInterval(i32 i)
 {
-    ASSERT(X11.init, "X11 not initialized");
-    glXSwapIntervalEXT(X11.dpy, X11.win, i);
+    glXSwapIntervalEXT(X11::dpy, X11::win, i);
 }
 
-void Platform::_sleep(u32 ms)
+void Window::_sleep(u32 ms)
 {
     i64 s = ms / 1000;
     i64 n = (ms - s * 1000) * 10e5;
@@ -220,9 +208,9 @@ void Platform::_sleep(u32 ms)
     nanosleep(&ts, nullptr);
 }
 
-static int translateKeyEvent(XKeyEvent *ke)
+static int translateKeyEvent(X11::XKeyEvent *ke)
 {
-    KeySym ks = XLookupKeysym(ke, 1);
+    X11::KeySym ks = XLookupKeysym(ke, 1);
 
     switch (ks)
     {

@@ -4,7 +4,6 @@
 #include "world/block.hpp"
 #include "utility/noise.hpp"
 
-#include <cstdio>
 #include <math.h>
 #include <memory.h>
 
@@ -17,14 +16,14 @@ Chunk::Chunk() :
 {
     memset(m_blocks, AIR, sizeof(m_blocks));
 
-    m_east      = Chunk::dummy();
-    m_west      = Chunk::dummy();
-    m_north     = Chunk::dummy();
-    m_south     = Chunk::dummy();
-    m_northeast = Chunk::dummy();
-    m_southeast = Chunk::dummy();
-    m_northwest = Chunk::dummy();
-    m_southwest = Chunk::dummy();
+    m_east      = s_dummy();
+    m_west      = s_dummy();
+    m_north     = s_dummy();
+    m_south     = s_dummy();
+    m_northeast = s_dummy();
+    m_southeast = s_dummy();
+    m_northwest = s_dummy();
+    m_southwest = s_dummy();
 
     m_opaquevertcount = 0;
     m_transparentvertcount = 0;
@@ -35,15 +34,36 @@ Chunk::Chunk() :
     m_vao.setAttribs(1, &va);
 }
 
+void Chunk::resetNeighbours() {
+    m_east     ->m_west      = s_dummy(); m_east     ->m_state = NeedsUpdating;
+    m_west     ->m_east      = s_dummy(); m_west     ->m_state = NeedsUpdating;
+    m_north    ->m_south     = s_dummy(); m_north    ->m_state = NeedsUpdating;
+    m_south    ->m_north     = s_dummy(); m_south    ->m_state = NeedsUpdating;
+    m_northeast->m_southwest = s_dummy(); m_northeast->m_state = NeedsUpdating;
+    m_southeast->m_northwest = s_dummy(); m_southeast->m_state = NeedsUpdating;
+    m_northwest->m_southeast = s_dummy(); m_northwest->m_state = NeedsUpdating;
+    m_southwest->m_northeast = s_dummy(); m_southwest->m_state = NeedsUpdating;
+
+    m_east      = s_dummy();
+    m_west      = s_dummy();
+    m_north     = s_dummy();
+    m_south     = s_dummy();
+    m_northeast = s_dummy();
+    m_southeast = s_dummy();
+    m_northwest = s_dummy();
+    m_southwest = s_dummy();
+    m_state = NeedsUpdating;
+}
+
 Chunk::Chunk(u8 t) { memset(m_blocks, t, sizeof(m_blocks)); }
-void Chunk::setEast     (Chunk *p) { m_east      = p; m_state = NeedsUpdating; }
-void Chunk::setWest     (Chunk *p) { m_west      = p; m_state = NeedsUpdating; }
-void Chunk::setNorth    (Chunk *p) { m_north     = p; m_state = NeedsUpdating; }
-void Chunk::setSouth    (Chunk *p) { m_south     = p; m_state = NeedsUpdating; }
-void Chunk::setNorthEast(Chunk *p) { m_northeast = p; m_state = NeedsUpdating; }
-void Chunk::setSouthEast(Chunk *p) { m_southeast = p; m_state = NeedsUpdating; }
-void Chunk::setNorthWest(Chunk *p) { m_northwest = p; m_state = NeedsUpdating; }
-void Chunk::setSouthWest(Chunk *p) { m_southwest = p; m_state = NeedsUpdating; }
+void Chunk::setEast     (Chunk *p) { m_east      = p; p->m_west      = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setWest     (Chunk *p) { m_west      = p; p->m_east      = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setNorth    (Chunk *p) { m_north     = p; p->m_south     = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setSouth    (Chunk *p) { m_south     = p; p->m_north     = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setNorthEast(Chunk *p) { m_northeast = p; p->m_southwest = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setSouthEast(Chunk *p) { m_southeast = p; p->m_northwest = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setNorthWest(Chunk *p) { m_northwest = p; p->m_southeast = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
+void Chunk::setSouthWest(Chunk *p) { m_southwest = p; p->m_northeast = this; m_state = NeedsUpdating; p->m_state = NeedsUpdating; }
 
 bool Chunk::_checkForOakTree(i32 x, i32 y, i32 z)
 {
@@ -108,6 +128,7 @@ void Chunk::generate(i32 x, i32 z, FBMConfig& fc)
     m_state = NeedsUpdating;
 
     m_origin = Vec3((f32)x * CHUNK_MAX_X, 0, (f32)z * CHUNK_MAX_Z);
+    m_center = {m_origin.x + CHUNK_MAX_X / 2.0f, CHUNK_MAX_Y / 2.0f, m_origin.z + CHUNK_MAX_Z / 2.0f};
     bool hasTree = false;
     memset(m_blocks, AIR, sizeof(m_blocks));
 
@@ -126,7 +147,7 @@ void Chunk::generate(i32 x, i32 z, FBMConfig& fc)
                     i32 d = y - seaLevel + 1;
                     d = d < 0 ? -d : d;
                     auto &cur = m_blocks[cx][cz][y];
-                    if ((cur == GRASS || cur == DIRT) && ((pcg32_random_r(&rng) & ((1 << d) - 1)) <= d))
+                    if ((cur == GRASS || cur == DIRT) && ((pcg32_random_r(&rng) & (u32)(((1 << d) - 1) <= d))))
                         cur = SAND;
                 }
 
@@ -152,13 +173,13 @@ void Chunk::renderPrep(const Shader &shader)
     m_vao.bind();
 }
 
-void Chunk::renderOpaque(const Shader &shader)
+void Chunk::renderOpaque()
 {
     if (!m_opaquevertcount) return;
     glDrawArrays(GL_TRIANGLES, 0, m_opaquevertcount);
 }
 
-void Chunk::renderTransparent(const Shader &shader)
+void Chunk::renderTransparent()
 {
     if (!m_transparentvertcount) return;
     glEnable(GL_BLEND);
@@ -176,120 +197,97 @@ void Chunk::update()
     m_renderOrigin = m_origin;
     m_opaquevertcount = 0;
     m_transparentvertcount = 0;
-    static constexpr u32 XMIN = 0;
-    static constexpr u32 ZMIN = 0;
     static constexpr u32 XMAX = CHUNK_MAX_X - 1;
     static constexpr u32 ZMAX = CHUNK_MAX_Z - 1;
     static constexpr u32 YMAX = CHUNK_MAX_Y - 1;
-    const u8 *e, *w, *n, *s, *ne, *nw, *se, *sw;
+    const u8 *c, *e, *w, *n, *s, *ne, *nw, *se, *sw;
+    const u8 (*nne)[CHUNK_MAX_Y];
+    const u8 (*nnw)[CHUNK_MAX_Y];
 
-    for (u16 x = XMIN; x <= XMAX; x ++) {
-        for (u16 z = ZMIN; z <= ZMAX; z ++) {
-            const u8 *c  = m_blocks[x][z];
+    for (u32 x = 0; x <= XMAX; x ++) {
+        c = m_south->m_blocks[x][ZMAX];
+        n = m_blocks[x][0];
 
-            if (x == XMIN) {
-                se = m_blocks[x + 1][z - 1];
-                e  = m_blocks[x + 1][z];
-                ne = m_blocks[x + 1][z + 1];
-                sw = m_west->m_blocks[XMAX][z - 1];
-                w  = m_west->m_blocks[XMAX][z];
-                nw = m_west->m_blocks[XMAX][z + 1];
-            } else if (x == XMAX) {
-                sw = m_blocks[x - 1][z - 1];
-                w  = m_blocks[x - 1][z];
-                nw = m_blocks[x - 1][z + 1];
-                se = m_east->m_blocks[XMIN][z - 1];
-                e  = m_east->m_blocks[XMIN][z];
-                ne = m_east->m_blocks[XMIN][z + 1];
+        if (x == 0) {
+            nnw = m_west->m_blocks[XMAX];
+            nne = m_blocks[x + 1];
+            w = m_southwest->m_blocks[XMAX][ZMAX];
+            e = m_south->m_blocks[x + 1][ZMAX];
+        } else if (x == XMAX) {
+            nnw = m_blocks[x - 1];
+            nne = m_east->m_blocks[0];
+            w = m_south->m_blocks[x - 1][ZMAX];
+            e = m_southeast->m_blocks[0][ZMAX];
+        } else {
+            nnw = m_blocks[x - 1];
+            nne = m_blocks[x + 1];
+            w = m_south->m_blocks[x - 1][ZMAX];
+            e = m_south->m_blocks[x + 1][ZMAX];
+        }
+
+        ne = nne[0];
+        nw = nnw[0];
+
+        for (u32 z = 0; z <= ZMAX; z ++) {
+            se = e, e = ne;
+            s  = c, c = n;
+            sw = w, w = nw;
+
+            if (z == ZMAX) {
+                n = m_north->m_blocks[x][0];
+                if (x == 0) {
+                    nw = m_northwest->m_blocks[XMAX][0];
+                    ne = m_north->m_blocks[x + 1][0];
+                } else if (x == XMAX) {
+                    nw = m_north->m_blocks[x - 1][0];
+                    ne = m_northeast->m_blocks[0][0];
+                } else {
+                    nw = m_north->m_blocks[x - 1][0];
+                    ne = m_north->m_blocks[x + 1][0];
+                }
             } else {
-                se = m_blocks[x + 1][z - 1];
-                e  = m_blocks[x + 1][z];
-                ne = m_blocks[x + 1][z + 1];
-                sw = m_blocks[x - 1][z - 1];
-                w  = m_blocks[x - 1][z];
-                nw = m_blocks[x - 1][z + 1];
+                n  = m_blocks[x][z + 1];
+                ne = nne[z + 1];
+                nw = nnw[z + 1];
             }
 
-            s = m_blocks[x][z - 1];
-            n = m_blocks[x][z + 1];
+            u8 curr = AIR;
+            Surrounding su = { };
+            su.t   =  c[0], su.te  =  e[0], su.tw  =  w[0],
+            su.tn  =  n[0], su.ts  =  s[0], su.tne = ne[0],
+            su.tnw = nw[0], su.tse = se[0], su.tsw = sw[0];
 
-            if (z == ZMIN) {
-                s = m_south->m_blocks[x][ZMAX];
-                if (x == XMIN) {
-                    se = m_south->m_blocks[x + 1][ZMAX];
-                    sw = m_southwest->m_blocks[XMAX][ZMAX];
-                } else if (x == XMAX) {
-                    sw = m_south->m_blocks[x - 1][ZMAX];
-                    se = m_southeast->m_blocks[XMIN][ZMAX];
-                } else {
-                    se = m_south->m_blocks[x + 1][ZMAX];
-                    sw = m_south->m_blocks[x - 1][ZMAX];
-                }
-            } else if (z == ZMAX) {
-                n = m_north->m_blocks[x][ZMIN];
-                if (x == XMIN) {
-                    ne = m_north->m_blocks[x + 1][ZMIN];
-                    nw = m_northwest->m_blocks[XMAX][ZMIN];
-                } else if (x == XMAX) {
-                    nw = m_north->m_blocks[x - 1][ZMIN];
-                    ne = m_northeast->m_blocks[XMIN][ZMIN];
-                } else {
-                    ne = m_north->m_blocks[x + 1][ZMIN];
-                    nw = m_north->m_blocks[x - 1][ZMIN];
-                }
+            u32 y;
+            for (y = 0; y < YMAX; y ++) {
+                su.b   = curr;
+                curr   = c[y];
+                su.t   = c[y + 1];
+                su.be  = su.me ; su.me  = su.te ; su.te  =  e[y + 1];
+                su.bw  = su.mw ; su.mw  = su.tw ; su.tw  =  w[y + 1];
+                su.bn  = su.mn ; su.mn  = su.tn ; su.tn  =  n[y + 1];
+                su.bs  = su.ms ; su.ms  = su.ts ; su.ts  =  s[y + 1];
+                su.bne = su.mne; su.mne = su.tne; su.tne = ne[y + 1];
+                su.bnw = su.mnw; su.mnw = su.tnw; su.tnw = nw[y + 1];
+                su.bse = su.mse; su.mse = su.tse; su.tse = se[y + 1];
+                su.bsw = su.msw; su.msw = su.tsw; su.tsw = sw[y + 1];
+
+                if (curr == WATER) fillVerts(transparentverts, m_transparentvertcount, x, y, z, curr, su);
+                else if (curr != AIR) fillVerts(opaqueverts, m_opaquevertcount, x, y, z, curr, su);
             }
 
-            u8 t = c[0];
-            if (t != AIR) {
-                Surrounding su = {};
-                su.t   =  c[1];
-                su.me  =  e[0]; su.te  =  e[1];
-                su.mw  =  w[0]; su.tw  =  w[1];
-                su.mn  =  n[0]; su.tn  =  n[1];
-                su.ms  =  s[0]; su.ts  =  s[1];
-                su.mne = ne[0]; su.tne = ne[1];
-                su.mnw = nw[0]; su.tnw = nw[1];
-                su.mse = se[0]; su.tse = se[1];
-                su.msw = sw[0]; su.tsw = sw[1];
-                (t != WATER) ?
-                    fillVerts(opaqueverts, m_opaquevertcount, x, 0, z, t, su):
-                    fillVerts(transparentverts, m_transparentvertcount, x, 0, z, t, su);
-            }
-
-            for (u16 y = 1; y < CHUNK_MAX_Y - 1; y ++) {
-                t = c[y];
-                if (t == AIR) continue;
-                Surrounding su = {};
-                su.b   =  c[y - 1];                 su.t   =  c[y + 1];
-                su.be  =  e[y - 1]; su.me  =  e[y]; su.te  =  e[y + 1];
-                su.bw  =  w[y - 1]; su.mw  =  w[y]; su.tw  =  w[y + 1];
-                su.bn  =  n[y - 1]; su.mn  =  n[y]; su.tn  =  n[y + 1];
-                su.bs  =  s[y - 1]; su.ms  =  s[y]; su.ts  =  s[y + 1];
-                su.bne = ne[y - 1]; su.mne = ne[y]; su.tne = ne[y + 1];
-                su.bnw = nw[y - 1]; su.mnw = nw[y]; su.tnw = nw[y + 1];
-                su.bse = se[y - 1]; su.mse = se[y]; su.tse = se[y + 1];
-                su.bsw = sw[y - 1]; su.msw = sw[y]; su.tsw = sw[y + 1];
-                (t != WATER) ?
-                    fillVerts(opaqueverts, m_opaquevertcount, x, y, z, t, su):
-                    fillVerts(transparentverts, m_transparentvertcount, x, y, z, t, su);
-            }
-
-            t = c[YMAX];
-            if (t != AIR) {
-                Surrounding su = {};
-                su.b   =  c[YMAX - 1];
-                su.me  =  e[YMAX - 0]; su.be  =  e[YMAX - 1];
-                su.mw  =  w[YMAX - 0]; su.bw  =  w[YMAX - 1];
-                su.mn  =  n[YMAX - 0]; su.bn  =  n[YMAX - 1];
-                su.ms  =  s[YMAX - 0]; su.bs  =  s[YMAX - 1];
-                su.mne = ne[YMAX - 0]; su.bne = ne[YMAX - 1];
-                su.mnw = nw[YMAX - 0]; su.bnw = nw[YMAX - 1];
-                su.mse = se[YMAX - 0]; su.bse = se[YMAX - 1];
-                su.msw = sw[YMAX - 0]; su.bsw = sw[YMAX - 1];
-                (t != WATER) ?
-                    fillVerts(opaqueverts, m_opaquevertcount, x, YMAX, z, t, su):
-                    fillVerts(transparentverts, m_transparentvertcount, x, YMAX, z, t, su);
-            }
+            su.b   = curr;
+            curr   = c[y];
+            su.t   = AIR;
+            su.be  = su.me ; su.me  = su.te ; su.te  = AIR;
+            su.bw  = su.mw ; su.mw  = su.tw ; su.tw  = AIR;
+            su.bn  = su.mn ; su.mn  = su.tn ; su.tn  = AIR;
+            su.bs  = su.ms ; su.ms  = su.ts ; su.ts  = AIR;
+            su.bne = su.mne; su.mne = su.tne; su.tne = AIR;
+            su.bnw = su.mnw; su.mnw = su.tnw; su.tnw = AIR;
+            su.bse = su.mse; su.mse = su.tse; su.tse = AIR;
+            su.bsw = su.msw; su.msw = su.tsw; su.tsw = AIR;
+            if (curr == WATER) fillVerts(transparentverts, m_transparentvertcount, x, YMAX, z, curr, su);
+            else if (curr != AIR) fillVerts(opaqueverts, m_opaquevertcount, x, YMAX, z, curr, su);
         }
     }
 

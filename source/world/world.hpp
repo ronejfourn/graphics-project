@@ -17,7 +17,7 @@ public:
 
     void generate(u64 seed, const Vec3 &pos);
     void update(const Vec3 &pos);
-    void depthPass (const Shader &shader);
+    void depthPass (const Shader &shader, const Mat4 &vp);
     void renderPass(const Shader &shader, const Mat4 &vp);
     const TextureArray &getTextureArray() { return m_textureArray; }
 private:

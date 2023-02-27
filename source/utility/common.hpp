@@ -1,11 +1,5 @@
 #pragma once
 
-#define PROJECT_TITLE "Block Game"
-#define OPENGL_VERSION_MAJOR 3
-#define OPENGL_VERSION_MINOR 3
-#define DEFAULT_WINDOW_WIDTH  720
-#define DEFAULT_WINDOW_HEIGHT 720
-
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>

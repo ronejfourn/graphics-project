@@ -2,6 +2,11 @@
 #include "glad/glad.h"
 #include "world/chunk.hpp"
 
+static constexpr f32 sunVertices[] = {
+     1.0f, -0.1f, -0.1f,  1.0f, -0.1f,  0.1f,  1.0f,  0.1f,  0.1f,
+     1.0f,  0.1f,  0.1f,  1.0f,  0.1f, -0.1f,  1.0f, -0.1f, -0.1f,
+};
+
 static constexpr f32 skyboxVertices[] = {
     -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,
      1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,
@@ -23,9 +28,14 @@ static constexpr f32 skyboxVertices[] = {
 };
 
 Sky::Sky(const Vec3 &pos) :
-    m_sun { ShadowMap(1, 4096, 4096) },
+    m_sun {
+        VertexArray(STATIC),
+        ShadowMap(1, 4096, 4096),
+        Shader("../shaders/sun.v.glsl", "../shaders/sun.f.glsl"),
+    },
     m_skybox {
         VertexArray(STATIC),
+        Shader("../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl"),
         Cubemap(3, {
                 "../resources/skybox/right.png",
                 "../resources/skybox/left.png",
@@ -33,9 +43,8 @@ Sky::Sky(const Vec3 &pos) :
                 "../resources/skybox/bottom.png",
                 "../resources/skybox/front.png",
                 "../resources/skybox/back.png",
-            })
-    },
-    m_shader("../shaders/skybox.v.glsl", "../shaders/skybox.f.glsl")
+            }),
+    }
 {
     m_skybox.vao.bind();
     m_skybox.vao.setData(sizeof(skyboxVertices), (void *)skyboxVertices);
@@ -43,10 +52,8 @@ Sky::Sky(const Vec3 &pos) :
     VertexAttrib va = {0, 3, FLOAT};
     m_skybox.vao.setAttribs(1, &va);
 
-    m_sun.proj = mat4Orthographic(256, 256, 256);
-    m_sun.ambient   = Vec3( 0.8f,  0.8f,  0.7f);
-    m_sun.diffuse   = Vec3( 0.9f,  0.9f,  0.8f);
-    m_sun.direction = Vec3( 0.7f, -0.7f,  0.7f);
+    m_sun.proj = mat4Orthographic(240, 240, 256);
+    m_sun.direction = Vec3(-1.0f,  0.0f,  0.0f);
 
     Vec3 dir = normalize(m_sun.direction);
     Vec3 src = pos;
@@ -54,21 +61,28 @@ Sky::Sky(const Vec3 &pos) :
     m_sun.view = mat4LookAt(src, dir, Vec3(0, 1, 0));
     m_sun.direction = dir;
 
-    m_shader.bind();
-    m_shader.uniform("skybox", m_skybox.cubemap.getTextureUnit());
+    m_skybox.shader.bind();
+    m_skybox.shader.uniform("skybox", m_skybox.cubemap.getTextureUnit());
+
+    m_sun.vao.bind();
+    m_sun.vao.setData(sizeof(sunVertices), (void *)sunVertices);
+    m_sun.vao.setAttribs(1, &va);
 }
 
 void Sky::update(const Camera &camera, f32 deltaTime)
 {
-    /* f32 deltaAngle = 0.0012f * deltaTime; */
+    f32 deltaAngle = 0.00125f * deltaTime;
 
-    /* static f32 accum = 0; */
-    /* if (accum > 1) { */
-    /*     const Mat4 rot  = mat4RotationZ(DEG2RAD(accum)); */
-    /*     m_sun.direction = Vec3(rot * Vec4(m_sun.direction)); */
-    /*     accum = 0; */
-    /* } */
-    /* accum += deltaAngle; */
+    static f32 accum = 0;
+    float q = lerp(0.1f, 4.0f, sinf(DEG2RAD(m_sun.angle)) * 0.5f + 0.5f);
+    if (accum > q) {
+        const Mat4 rot  = mat4RotationZ(DEG2RAD(accum));
+        m_sun.direction = Vec3(rot * Vec4(m_sun.direction));
+        accum = 0;
+    }
+    m_sun.angle += deltaAngle;
+    m_skybox.angle += deltaAngle;
+    accum += deltaAngle;
 
     Vec3 dir = m_sun.direction;
     Vec4 src = Vec4(camera.getPosition());
@@ -85,22 +99,19 @@ void Sky::update(const Camera &camera, f32 deltaTime)
     src = invSunViewProj * Vec4(src);
     m_sun.view = mat4LookAt(Vec3(src), dir, Vec3(0, 1, 0));
 
-    /* static f32 sunAngle = 0; */
-    /* sunAngle += deltaAngle; */
-
-    /* f32 diff; */
-    /* if (sunAngle < 45.0f)       diff = lerp(0.2f, 0.4f, (sunAngle -   0.0f) / ( 45.0f -   0.0f)); */
-    /* else if (sunAngle <  75.0f) diff = lerp(0.4f, 0.6f, (sunAngle -  45.0f) / ( 75.0f -  45.0f)); */
-    /* else if (sunAngle <  90.0f) diff = lerp(0.6f, 1.0f, (sunAngle -  75.0f) / ( 90.0f -  75.0f)); */
-    /* else if (sunAngle < 105.0f) diff = lerp(1.0f, 0.6f, (sunAngle -  90.0f) / (105.0f -  90.0f)); */
-    /* else if (sunAngle < 135.0f) diff = lerp(0.6f, 0.4f, (sunAngle - 105.0f) / (135.0f - 105.0f)); */
-    /* else if (sunAngle < 180.0f) diff = lerp(0.4f, 0.2f, (sunAngle - 135.0f) / (180.0f - 135.0f)); */
-    /* else if (sunAngle < 225.0f) diff = lerp(0.2f, 0.0f, (sunAngle - 180.0f) / (225.0f - 180.0f)); */
-    /* else if (sunAngle < 315.0f) diff = 0; */
-    /* else if (sunAngle < 360.0f) diff = lerp(0.0f, 0.2f, (sunAngle - 315.0f) / (360.0f - 315.0f)); */
-    /* else sunAngle = 0, diff = 0.2f; */
-    /* m_sun.diffuse = Vec3(diff); */
-    /* m_sun.ambient = max(Vec3(0.05f), m_sun.ambient * diff); */
+    f32 diff;
+    if (m_sun.angle < 45.0f)       diff = lerp(0.2f, 0.4f, (m_sun.angle -   0.0f) / ( 45.0f -   0.0f));
+    else if (m_sun.angle <  75.0f) diff = lerp(0.4f, 0.6f, (m_sun.angle -  45.0f) / ( 75.0f -  45.0f));
+    else if (m_sun.angle <  90.0f) diff = lerp(0.6f, 1.0f, (m_sun.angle -  75.0f) / ( 90.0f -  75.0f));
+    else if (m_sun.angle < 105.0f) diff = lerp(1.0f, 0.6f, (m_sun.angle -  90.0f) / (105.0f -  90.0f));
+    else if (m_sun.angle < 135.0f) diff = lerp(0.6f, 0.4f, (m_sun.angle - 105.0f) / (135.0f - 105.0f));
+    else if (m_sun.angle < 180.0f) diff = lerp(0.4f, 0.2f, (m_sun.angle - 135.0f) / (180.0f - 135.0f));
+    else if (m_sun.angle < 225.0f) diff = lerp(0.2f, 0.0f, (m_sun.angle - 180.0f) / (225.0f - 180.0f));
+    else if (m_sun.angle < 315.0f) diff = 0;
+    else if (m_sun.angle < 360.0f) diff = lerp(0.0f, 0.2f, (m_sun.angle - 315.0f) / (360.0f - 315.0f));
+    else m_sun.angle = 0, diff = 0.2f;
+    m_sun.diffuse = Vec3(diff);
+    m_sun.ambient = Vec3(1.1f, 1.0f, 0.7f) * max(diff, 0.2f);
 }
 
 void Sky::render(const Camera &camera)
@@ -111,14 +122,22 @@ void Sky::render(const Camera &camera)
     view[2][3] = 0;
     Mat4 proj = camera.getProjectionMatrix();
     Mat4 viewproj = proj * view;
-
+    Mat4 modelviewproj = viewproj * mat4RotationZ(DEG2RAD(m_sun.angle));
     Vec3 sunPos = -m_sun.direction;
-    m_shader.bind();
-    m_shader.uniform("viewproj", viewproj);
-    m_shader.uniform("sunPos", sunPos);
 
-    m_skybox.vao.bind();
     glDepthRange(0.9999f, 1.0f);
+
+    m_sun.shader.bind();
+    m_sun.shader.uniform("modelviewproj", modelviewproj);
+    m_sun.shader.uniform("sunPos", sunPos);
+    m_sun.vao.bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    modelviewproj = viewproj * mat4RotationY(DEG2RAD(m_skybox.angle));
+    m_skybox.vao.bind();
+    m_skybox.shader.bind();
+    m_skybox.shader.uniform("modelviewproj", modelviewproj);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
     glDepthRange(0.0f, 1.0f);
 }

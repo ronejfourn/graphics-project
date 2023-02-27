@@ -6,21 +6,21 @@ union Mat4
 {
     Vec4 r[4];
 
-    Mat4() {
+    inline Mat4() {
         r[0] = {1, 0, 0, 0};
         r[1] = {0, 1, 0, 0};
         r[2] = {0, 0, 1, 0};
         r[3] = {0, 0, 0, 1};
     }
 
-    Mat4(f32 v) {
+    inline Mat4(f32 v) {
         r[0] = {v, 0, 0, 0};
         r[1] = {0, v, 0, 0};
         r[2] = {0, 0, v, 0};
         r[3] = {0, 0, 0, v};
     }
 
-    Mat4(const Vec4 &r1, const Vec4 &r2, const Vec4 &r3, const Vec4 &r4) :
+    inline Mat4(const Vec4 &r1, const Vec4 &r2, const Vec4 &r3, const Vec4 &r4) :
         r{r1, r2, r3, r4} {};
 
     Vec4 &operator[] (int i)

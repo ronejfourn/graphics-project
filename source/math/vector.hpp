@@ -10,8 +10,8 @@ union Vec3
     struct {f32 x, y, z;};
     f32 v[3];
 
-    Vec3() : v{0, 0, 0} {}
-    Vec3(f32 x, f32 y, f32 z) : v{x, y, z} {}
+    inline Vec3() : v{0, 0, 0} {}
+    inline Vec3(f32 x, f32 y, f32 z) : v{x, y, z} {}
 
     explicit inline Vec3(f32 a) : v{a, a, a} {}
     explicit inline Vec3(const Vec4 &);
@@ -34,8 +34,8 @@ union Vec4
     struct {f32 x, y, z, w;};
     f32 v[4];
 
-    Vec4() : v{0, 0, 0, 1} {}
-    Vec4(f32 x, f32 y, f32 z, f32 w = 1) : v{x, y, z, w} {}
+    inline Vec4() : v{0, 0, 0, 1} {}
+    inline Vec4(f32 x, f32 y, f32 z, f32 w = 1) : v{x, y, z, w} {}
 
     explicit inline Vec4(f32 a) : v{a, a, a, a} {}
     explicit inline Vec4(const Vec3 &);

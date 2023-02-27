@@ -36,7 +36,7 @@ static Bytes  getBytes(ByteBuffer *lb, size_t n, size_t *r);
 static bool   getChunk(ByteBuffer *b, Chunk* c, u32 type);
 static bool   checkSignature(ByteBuffer *lb);
 #define       getType(lb, T, r) *(const T*)getBytes(lb, sizeof(T), r)
-static u32    idatGetBits(ByteBuffer *idat, size_t n, ByteBuffer *b, size_t *r);
+static u32    idatGetBits(ByteBuffer *idat, size_t n, ByteBuffer *b);
 #define       idatGetType(lb, T, b, r) *(const T*)idatGetBytes(lb, sizeof(T), b, r)
 static size_t uncompressed(ByteBuffer *idat, ByteBuffer *b, size_t idx, u8 *decompData);
 static void   huffmanConstruct(Huffman *h);
@@ -152,8 +152,8 @@ u8 *loadPNGFromMemory(const u8 *buffer, size_t size, u32 *w, u32 *h)
 
     u32 bfinal, btype;
     do {
-        bfinal = idatGetBits(&idat, 1, &bbuf, &r);
-        btype  = idatGetBits(&idat, 2, &bbuf, &r);
+        bfinal = idatGetBits(&idat, 1, &bbuf);
+        btype  = idatGetBits(&idat, 2, &bbuf);
 
         if (btype == 0) {
             idx = uncompressed(&idat, &bbuf, idx, decompData);
@@ -193,7 +193,7 @@ u8 *loadPNGFromMemory(const u8 *buffer, size_t size, u32 *w, u32 *h)
         idat.byteCount -= 1;
     }
 
-    u32 alder32 = idatGetBits(&idat, 32, &bbuf, &r); (void)alder32;
+    u32 alder32 = idatGetBits(&idat, 32, &bbuf); (void)alder32;
     ASSERT(idat.bitCount == 0 && idat.byteCount == 1, "");
     u8 *pixels = (u8 *)calloc(1, 4 * ihdr.w * ihdr.h);
     if (!pixels) {
@@ -270,11 +270,11 @@ size_t uncompressed(ByteBuffer *idat, ByteBuffer *b, size_t idx, u8 *decompData)
 
     size_t r;
     u16 len = 0, nlen = 0;
-    len  |= idatGetBits(idat, 8, b, &r) << 8;
-    len  |= idatGetBits(idat, 8, b, &r) << 0;
-    nlen |= idatGetBits(idat, 8, b, &r) << 8;
-    nlen |= idatGetBits(idat, 8, b, &r) << 0;
-    if (len != ~nlen) {
+    len  |= idatGetBits(idat, 8, b) << 8;
+    len  |= idatGetBits(idat, 8, b) << 0;
+    nlen |= idatGetBits(idat, 8, b) << 8;
+    nlen |= idatGetBits(idat, 8, b) << 0;
+    if (len != (u16)~nlen) {
         errorStr = "corrupt PNG, invalid LEN";
         return 0;
     }
@@ -331,17 +331,16 @@ bool dynamicHuffman(ByteBuffer *idat, ByteBuffer *b, u32 *litlendistLengths, Huf
 {
 #define MAX_HCLEN 19
 #define MAX_CL_CODE_LENGTH 7
-    size_t r;
-    u32 hlit  = idatGetBits(idat, 5, b, &r) + 257;
-    u32 hdist = idatGetBits(idat, 5, b, &r) + 1;
-    u32 hclen = idatGetBits(idat, 4, b, &r) + 4;
+    u32 hlit  = idatGetBits(idat, 5, b) + 257;
+    u32 hdist = idatGetBits(idat, 5, b) + 1;
+    u32 hclen = idatGetBits(idat, 4, b) + 4;
 
     u8  order[MAX_HCLEN] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
     u32 lengths[MAX_HCLEN], symbols[19], counts[MAX_CL_CODE_LENGTH + 1];
     memset(lengths, 0, sizeof(lengths));
 
     for (u32 i = 0; i < hclen; i ++)
-        lengths[order[i]] = idatGetBits(idat, 3, b, &r);
+        lengths[order[i]] = idatGetBits(idat, 3, b);
 
     Huffman codelenHuffman;
     codelenHuffman.lengths  = lengths;
@@ -359,13 +358,13 @@ bool dynamicHuffman(ByteBuffer *idat, ByteBuffer *b, u32 *litlendistLengths, Huf
             rep = 1;
         } else if (symbol == 16) {
             symbol = litlendistLengths[index - 1];
-            rep = idatGetBits(idat, 2, b, &r) + 3;
+            rep = idatGetBits(idat, 2, b) + 3;
         } else if (symbol == 17) {
             symbol = 0;
-            rep = idatGetBits(idat, 3, b, &r) + 3;
+            rep = idatGetBits(idat, 3, b) + 3;
         } else if (symbol == 18) {
             symbol = 0;
-            rep = idatGetBits(idat, 7, b, &r) + 11;
+            rep = idatGetBits(idat, 7, b) + 11;
         } else {
             errorStr = "corrupt PNG, bad symbol while constructing dynamic huffman tree";
             return false;
@@ -392,7 +391,6 @@ size_t decompressUsingHuffman(u8 *decompData, ByteBuffer *idat, ByteBuffer *b, s
     const u8  lenExtra[] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, };
     const u16 distBase[] = { 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, };
     const u8 distExtra[] = { 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, };
-    size_t r;
 
     for (;;) {
         /* decode literal/length value from input stream */
@@ -415,13 +413,13 @@ size_t decompressUsingHuffman(u8 *decompData, ByteBuffer *idat, ByteBuffer *b, s
         u16 lenIndex = value - 257;
         u32 len = lenBase[lenIndex];
         u8 extraBits = lenExtra[lenIndex];
-        len += idatGetBits(idat, extraBits, b, &r);
+        len += idatGetBits(idat, extraBits, b);
 
         /* decode distance from input stream */
         u32 distIndex = huffmanDecode(idat, b, distHuffman);
         u32 dist = distBase[distIndex];
         extraBits = distExtra[distIndex];
-        dist += idatGetBits(idat, extraBits, b, &r);
+        dist += idatGetBits(idat, extraBits, b);
 
         /* move backwards distance bytes in the output */
         u8 *src = decompData + idx - dist;
@@ -438,9 +436,9 @@ size_t decompressUsingHuffman(u8 *decompData, ByteBuffer *idat, ByteBuffer *b, s
 
 bool reverseFilter(u8 *pixels, u8 *decompData, u32 bpp, u32 width, u32 height)
 {
-    u8 *filt, *recon, *prev, type = 0;
-    enum { ftNone = 0, ftSub, ftUp, ftAverage, ftPaeth, firstAverage};
-    type  = *decompData;
+    u8 *filt, *recon, *prev;
+    enum FT { ftNone = 0, ftSub, ftUp, ftAverage, ftPaeth, firstAverage} type;
+    type  = (FT)*decompData;
     filt  = decompData + 1;
     recon = pixels;
     prev  = recon - 4 * width;
@@ -449,7 +447,7 @@ bool reverseFilter(u8 *pixels, u8 *decompData, u32 bpp, u32 width, u32 height)
 
     u32 bpl = bpp * width + 1;
     for (u32 i = 0; i < height; i ++) {
-        type = *decompData;
+        type = (FT)*decompData;
         filt = decompData + 1;
         if (type == ftNone) {
             for (u32 i = 0; i < width; i ++) {
@@ -540,7 +538,7 @@ u32 correctEndian(u32 a)
 #undef BSWAP
 }
 
-u32 idatGetBits(ByteBuffer *idat, size_t n, ByteBuffer *b, size_t *r)
+u32 idatGetBits(ByteBuffer *idat, size_t n, ByteBuffer *b)
 {
     ASSERT(n <= 32, "getting too many bits");
     u32 ret = 0;
@@ -594,11 +592,10 @@ void huffmanConstruct(Huffman *h)
 
 i32 huffmanDecode(ByteBuffer *idat, ByteBuffer *b, Huffman *h)
 {
-    size_t r;
     u32 code = 0, base = 0, first = 0;
     for (u32 len = 1; len <= h->maxLen; len++) {
         first = (first + h->counts[len - 1]) << 1;
-        code |= idatGetBits(idat, 1, b, &r);
+        code |= idatGetBits(idat, 1, b);
         i32 count = h->counts[len];
         if (count) {
             i32 off = code - first;

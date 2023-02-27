@@ -16,7 +16,7 @@ uint32_t pcg32_random_r(pcg32_random_t* rng)
 }
 
 FBMConfig::FBMConfig(u64 _seed, u32 _octaves, f32 _lacunarity, f32 _gain, f32 _scale) :
-    seed(_seed), octaves(_octaves), lacunarity(_lacunarity), gain(_gain), scale(_scale)
+    lacunarity(_lacunarity), gain(_gain), scale(_scale), octaves(_octaves), seed(_seed)
 {
     pcg32_random_t rng{_seed, 1};
 

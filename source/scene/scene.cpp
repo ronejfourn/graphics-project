@@ -2,19 +2,11 @@
 #include "glad/glad.h"
 #include "math/matrix.hpp"
 
-static i32 W = DEFAULT_WINDOW_WIDTH;
-static i32 H = DEFAULT_WINDOW_HEIGHT;
 static const Vec3 DEF_CAMERA_POS(0, 140, 0);
 constexpr u32 RENDER_DISTANCE = 32;
 
-Scene &Scene::instance()
-{
-    static Scene s_instance;
-    return s_instance;
-}
-
 Scene::Scene() :
-    m_camera(DEF_CAMERA_POS, 90, 1, Vec3(0, 1, 0), DEG2RAD(-89)),
+    m_camera(DEF_CAMERA_POS),
     m_blockShader("../shaders/block.v.glsl", "../shaders/block.f.glsl"),
     m_depthShader("../shaders/depth.v.glsl", "../shaders/depth.f.glsl"),
     m_world(2 * RENDER_DISTANCE),
@@ -24,6 +16,7 @@ Scene::Scene() :
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_CLAMP);
+    glPolygonOffset(4, 4);
     glClearColor(0, 0, 0, 0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -61,13 +54,22 @@ void Scene::update(Events &events, f32 deltaTime)
     if (events.keyHeld(KEY_K)) m_camera.processMouseMovement( 0,  r);
     if (events.keyHeld(KEY_L)) m_camera.processMouseMovement( r,  0);
 
-    if (events.window.resized) {
-        W = events.window.w, H = events.window.h;
-        m_camera.setAspectRatio((f32)events.window.w / (f32)events.window.h);
+    f32 s = 1;
+    if (events.keyHeld(KEY_F)) s = 64;
+
+    if (events.keyPressed(KEY_T)) {
+        static bool wf = true;
+        glPolygonMode(GL_FRONT_AND_BACK, wf ? GL_LINE : GL_FILL);
+        wf = !wf;
     }
 
+    m_viewport.w = events.window.w;
+    m_viewport.h = events.window.h;
+    if (events.window.resized)
+        m_camera.setAspectRatio((f32)events.window.w / (f32)events.window.h);
+
     m_world.update(m_camera.getPosition());
-    m_sky.update(m_camera, deltaTime);
+    m_sky.update(m_camera, deltaTime * s);
 }
 
 void Scene::render()
@@ -80,11 +82,15 @@ void Scene::render()
     m_depthShader.uniform("sunViewProj", sunViewProj);
 
     // world shadow pass
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_POLYGON_OFFSET_FILL);
     sun.shadowMap.prepWrite();
-    m_world.depthPass(m_depthShader);
+    m_world.depthPass(m_depthShader, sunViewProj);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glEnable(GL_CULL_FACE);
 
     // world render pass
-    glViewport(0, 0, W, H);
+    glViewport(0, 0, m_viewport.w, m_viewport.h);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 

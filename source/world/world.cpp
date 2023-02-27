@@ -37,28 +37,12 @@ void World::_loadNewChunks(i32 xmax, i32 xmin, i32 zmax, i32 zmin, i32 xinc, i32
         for (i32 z = zmin; z <= zmax; z++) {
             i32 zi = mod(z, m_nchunks);
             Chunk &self = m_chunks[bi + zi];
-
-            self.getEast     ()->setWest     (Chunk::dummy());
-            self.getWest     ()->setEast     (Chunk::dummy());
-            self.getNorth    ()->setSouth    (Chunk::dummy());
-            self.getSouth    ()->setNorth    (Chunk::dummy());
-            self.getNorthEast()->setSouthWest(Chunk::dummy());
-            self.getSouthEast()->setNorthWest(Chunk::dummy());
-            self.getNorthWest()->setSouthEast(Chunk::dummy());
-            self.getSouthWest()->setNorthEast(Chunk::dummy());
-
-            self.setEast     (Chunk::dummy());
-            self.setWest     (Chunk::dummy());
-            self.setNorth    (Chunk::dummy());
-            self.setSouth    (Chunk::dummy());
-            self.setNorthEast(Chunk::dummy());
-            self.setSouthEast(Chunk::dummy());
-            self.setNorthWest(Chunk::dummy());
-            self.setSouthWest(Chunk::dummy());
+            self.resetNeighbours();
         }
     }
 
     i32 xn, zn;
+    Chunk *p;
     for (i32 x = xmin; x <= xmax; x++) {
         i32 xi = mod(x, m_nchunks);
         i32 bi = xi * m_nchunks;
@@ -68,62 +52,50 @@ void World::_loadNewChunks(i32 xmax, i32 xmin, i32 zmax, i32 zmin, i32 xinc, i32
             self.generate(x, z, m_fbmc);
 
             if (x > xmin || xinc > 0) {
-                xn = mod(x - 1, m_nchunks);
-                zn = zi;
-                Chunk *w = &m_chunks[xn * m_nchunks + zn];
-                w->setEast(&self);
-                self.setWest(w);
+                xn = mod(x - 1, m_nchunks), zn = zi;
+                p  = &m_chunks[xn * m_nchunks + zn];
+                self.setWest(p);
             }
 
             if (x < xmax || xinc < 0) {
-                xn = mod(x + 1, m_nchunks);
-                zn = zi;
-                Chunk *e = &m_chunks[xn * m_nchunks + zn];
-                e->setWest(&self);
-                self.setEast(e);
+                xn = mod(x + 1, m_nchunks), zn = zi;
+                p  = &m_chunks[xn * m_nchunks + zn];
+                self.setEast(p);
             }
 
             if (z > zmin || zinc > 0) {
-                xn = xi;
-                zn = mod(z - 1, m_nchunks);
-                Chunk *s = &m_chunks[xn * m_nchunks + zn];
-                s->setNorth(&self);
-                self.setSouth(s);
+                xn = xi, zn = mod(z - 1, m_nchunks);
+                p  = &m_chunks[xn * m_nchunks + zn];
+                self.setSouth(p);
 
                 if (x > xmin || xinc > 0) {
                     xn = mod(x - 1, m_nchunks);
-                    Chunk *sw = &m_chunks[xn * m_nchunks + zn];
-                    sw->setNorthEast(&self);
-                    self.setSouthWest(sw);
+                    p  = &m_chunks[xn * m_nchunks + zn];
+                    self.setSouthWest(p);
                 }
 
                 if (x < xmax || xinc < 0) {
                     xn = mod(x + 1, m_nchunks);
-                    Chunk *se = &m_chunks[xn * m_nchunks + zn];
-                    se->setNorthWest(&self);
-                    self.setSouthEast(se);
+                    p  = &m_chunks[xn * m_nchunks + zn];
+                    self.setSouthEast(p);
                 }
             }
 
             if (z < zmax || zinc < 0) {
-                xn = xi;
-                zn = mod(z + 1, m_nchunks);
-                Chunk *n = &m_chunks[xn * m_nchunks + zn];
-                n->setSouth(&self);
-                self.setNorth(n);
+                xn = xi, zn = mod(z + 1, m_nchunks);
+                p  = &m_chunks[xn * m_nchunks + zn];
+                self.setNorth(p);
 
                 if (x > xmin || xinc > 0) {
                     xn = mod(x - 1, m_nchunks);
-                    Chunk *nw = &m_chunks[xn * m_nchunks + zn];
-                    nw->setSouthEast(&self);
-                    self.setNorthWest(nw);
+                    p  = &m_chunks[xn * m_nchunks + zn];
+                    self.setNorthWest(p);
                 }
 
                 if (x < xmax || xinc < 0) {
                     xn = mod(x + 1, m_nchunks);
-                    Chunk *ne = &m_chunks[xn * m_nchunks + zn];
-                    ne->setSouthWest(&self);
-                    self.setNorthEast(ne);
+                    p  = &m_chunks[xn * m_nchunks + zn];
+                    self.setNorthEast(p);
                 }
             }
         }
@@ -149,6 +121,10 @@ void World::generate(u64 seed, const Vec3 &pos)
 
     _loadNewChunks(xmax, xmin, zmax, zmin, 0, 0);
     _sortChunks(pos);
+
+    const i32 m = m_nchunks * m_nchunks;
+    for (i32 i = 0; i < m; i++)
+        m_chunks[i].update();
 }
 
 void World::_sortChunks(const Vec3 &pos)
@@ -217,7 +193,7 @@ void World::update(const Vec3 &pos)
 
     u32 c = 0;
     const i32 m = m_nchunks * m_nchunks;
-    for (i32 i = m - 1; i >= 0 && c < 8; i--) {
+    for (i32 i = m - 1; i >= 0 && c < 4; i--) {
         if (m_sortedChunks[i].ptr->getState() == NeedsUpdating) {
             m_sortedChunks[i].ptr->update();
             c ++;
@@ -225,31 +201,45 @@ void World::update(const Vec3 &pos)
     }
 }
 
-void World::depthPass(const Shader &shader)
+constexpr f32 hx = CHUNK_MAX_X / 2.0f;
+constexpr f32 hy = CHUNK_MAX_Y / 2.0f;
+constexpr f32 hz = CHUNK_MAX_Z / 2.0f;
+const Vec4 e[8] = {
+    {+hx, +hy, +hz, 0},
+    {+hx, +hy, -hz, 0},
+    {+hx, -hy, +hz, 0},
+    {+hx, -hy, -hz, 0},
+    {-hx, +hy, +hz, 0},
+    {-hx, +hy, -hz, 0},
+    {-hx, -hy, +hz, 0},
+    {-hx, -hy, -hz, 0},
+};
+
+void World::depthPass(const Shader &shader, const Mat4 &vp)
 {
     const i32 m = m_nchunks * m_nchunks;
     for (i32 i = 0; i < m; i++) {
-        m_sortedChunks[i].ptr->renderPrep(shader);
-        m_sortedChunks[i].ptr->renderOpaque(shader);
+        auto &r = m_chunks[i];
+        Vec4 c = Vec4(r.getCenter());
+        bool visible = false;
+        for (int i = 0; i < 8 && !visible; i ++) {
+            auto r = vp * (c + e[i]);
+            auto x = r.x / r.w;
+            auto y = r.y / r.w;
+            auto z = r.z / r.w;
+            visible = r.w > 0 && x <= 1 && x >= -1 && y <= 1 && y >= -1 && z <= 1 && z >= -1;
+        }
+
+        if (visible)
+        {
+            r.renderPrep(shader);
+            r.renderOpaque();
+        }
     }
 }
 
 void World::renderPass(const Shader &shader, const Mat4 &vp)
 {
-    constexpr f32 hx = CHUNK_MAX_X / 2.0f;
-    constexpr f32 hy = CHUNK_MAX_Y / 2.0f;
-    constexpr f32 hz = CHUNK_MAX_Z / 2.0f;
-    const Vec4 e[8] = {
-        {+hx, +hy, +hz, 0},
-        {+hx, +hy, -hz, 0},
-        {+hx, -hy, +hz, 0},
-        {+hx, -hy, -hz, 0},
-        {-hx, +hy, +hz, 0},
-        {-hx, +hy, -hz, 0},
-        {-hx, -hy, +hz, 0},
-        {-hx, -hy, -hz, 0},
-    };
-
     m_textureArray.bind();
     const i32 m = m_nchunks * m_nchunks;
     for (i32 i = 0; i < m; i++) {
@@ -257,19 +247,16 @@ void World::renderPass(const Shader &shader, const Mat4 &vp)
 
         Vec4 c = Vec4(ptr->getCenter());
         bool visible = false;
-        for (int i = 0; i < 8; i ++) {
-            auto r = vp * (c + e[i]);
+        for (i32 j = 0; j < 8 && !visible; j ++) {
+            auto r = vp * (c + e[j]);
             auto x = r.x / r.w;
-            if (r.w > 0 && x <= 1 && x >= -1) {
-                visible = true;
-                break;
-            }
+            visible = r.w > 0 && x <= 1 && x >= -1;
         }
 
         if (visible) {
             ptr->renderPrep(shader);
-            ptr->renderOpaque(shader);
-            ptr->renderTransparent(shader);
+            ptr->renderOpaque();
+            ptr->renderTransparent();
         }
     }
 }

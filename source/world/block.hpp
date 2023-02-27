@@ -27,4 +27,4 @@ struct Surrounding {
     u8 bne, bnw, bse, bsw;
 };
 
-void fillVerts(u32 *verts, u32 &count, u16 x, u16 y, u16 z, u8 c, const Surrounding &s);
+void fillVerts(u32 *verts, u32 &count, u32 x, u32 y, u32 z, u8 c, const Surrounding &s);

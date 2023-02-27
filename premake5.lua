@@ -6,10 +6,12 @@ workspace "graphics-project"
   filter "configurations:debug"
     symbols "On"
     defines "DEBUG"
+    runtime "Debug"
 
   filter "configurations:release"
     optimize "On"
     defines "NDEBUG"
+    runtime "Release"
 
   filter {}
 
@@ -22,9 +24,11 @@ project "graphics-project"
   targetdir "%{prj.location}/%{cfg.buildcfg}"
   objdir "%{prj.location}/%{cfg.buildcfg}/obj"
 
+  warnings "Extra"
+
   files { "%{wks.location}/**.cpp", "%{wks.location}/**.hpp" }
   files { "%{wks.location}/**.c"  , "%{wks.location}/**.h"   }
-  removefiles { "%{wks.location}/source/platform/specific/*" }
+  removefiles { "%{wks.location}/source/window/platform/*" }
   includedirs { "%{wks.location}/source", "%{wks.location}/extern"}
 
   filter "system:windows"

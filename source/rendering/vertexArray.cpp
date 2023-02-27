@@ -36,7 +36,7 @@ void VertexArray::subData(u32 size, void *data, u32 offset)
 void VertexArray::setAttribs(u32 nattribs, VertexAttrib *attribs)
 {
     ASSERT(nattribs && attribs, "invalid attributes");
-    u32 stride = 0, size;
+    u32 stride = 0, size = 0;
     for (u32 i = 0; i < nattribs; i ++) {
         u32 t = attribs[i].type;
         u32 c = attribs[i].count;

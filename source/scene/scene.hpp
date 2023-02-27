@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform/events.hpp"
+#include "window/events.hpp"
 #include "rendering/shader.hpp"
 #include "rendering/shadowMap.hpp"
 #include "world/world.hpp"
@@ -10,13 +10,13 @@
 class Scene
 {
 public:
-    static Scene &instance();
+     Scene();
+    ~Scene();
     void update(Events &e, f32 dt);
     void render();
+
 private:
-    Scene();
-    Scene(Scene &) = delete;
-    ~Scene();
+    struct {i32 w, h;} m_viewport;
     Camera m_camera;
     Shader m_blockShader;
     Shader m_depthShader;

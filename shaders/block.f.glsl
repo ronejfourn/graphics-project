@@ -29,27 +29,17 @@ float getShadow(float d) {
     lproj = lproj * 0.5f + 0.5f;
     if (lproj.z > 1 || d <= 0) return 1.0f;
 
-    float shadow = 0;
-    vec2 texel = 1.0f / textureSize(shadowMap, 0);
-    /* float bias = max(0.005f * (1 - d), 0.001f); */
-    for (int y = -3; y <= 3; y ++) {
-        for (int x = -3; x <= 3; x ++) {
-            float depth = texture(shadowMap, lproj.xy + vec2(x * texel.x, y * texel.y)).r;
-            /* shadow += lproj.z - bias > depth ? 0.0f : 1.0f; */
-            shadow += lproj.z - 0.00125f > depth ? 0.0f : 1.0f;
-        }
-    }
-
-    return shadow / 49.0f;
+    float depth = texture(shadowMap, lproj.xy).r;
+    return (lproj.z - 0.00125f > depth ? 0.0f : 1.0f);
 }
 
 vec3 applyFog(vec3 rgb)
 {
     const float fogDensity = 0.00003f;
-    float sunAmount = max(-dot(viewDir, sun.direction), 0.0);
+    float sunAmount = max(-dot(viewDir, sun.direction), 0.0) * mix(1.0f, 0.0f, min(abs(sun.direction.y) / 0.6f, 1.0f));
     vec3  fogColor  = mix(vec3(0.5f, 0.6f, 0.8f),
                           vec3(1.1f, 1.0f, 0.7f),
-                          pow(sunAmount, 8.0f));
+                          sunAmount * sunAmount);
     float z = gl_FragCoord.z / gl_FragCoord.w;
     float fogAmount = 1 - clamp(exp(-fogDensity * z * z), 0.2, 1);
     return mix(rgb, fogColor, fogAmount);
@@ -64,7 +54,7 @@ vec3 calcLight()
     float diff = max(-dotp, 0.0f);
     vec3 diffuse = diff * sun.diffuse;
 
-    float shininess = 32;
+    float shininess = 16.0f + 112.0f * float(texCoord.z == 6);
     float specularStrength = 0.5f;
     vec3 reflectDir = reflect(-sun.direction, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
@@ -80,15 +70,13 @@ void main() {
     vec3 alb = tex.rgb;
     vec3 lit = calcLight();
 
-    vec3 clr = alb * lit;
-    if (texCoord.z == 6) {
-        vec3 R = reflect(viewDir, normal);
-        clr = mix(texture(skybox, R).rgb, clr, 0.4f);
-    }
-
+    vec3 clr = alb;
+    vec3 R = reflect(viewDir, normal);
+    clr = mix(clr, texture(skybox, R).rgb, (0.5f * float(texCoord.z == 6)));
+    clr = clr * lit;
     clr = applyFog(clr);
     clr = pow(clr, vec3(1.0f / 1.5f));
-    frg = vec4(clr, max(tex.a, 0.9f));
+    frg = vec4(clr, tex.a);
 
     gl_FragDepth = log2(flogz) * HALF_FCOEF;
 }
