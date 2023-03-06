@@ -21,3 +21,17 @@ make
 cd build
 ./debug/graphics-project
 ```
+
+## Controls
+`W` move forwards  
+`S` move backwards  
+`A` move left  
+`D` move right  
+
+`H` pan left  
+`J` tilt down  
+`K` tilt up  
+`L` pan right
+
+`F` fast forward  
+`T` toggle wireframe/fill
