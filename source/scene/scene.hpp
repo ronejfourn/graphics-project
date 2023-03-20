@@ -12,7 +12,7 @@ class Scene
 public:
      Scene();
     ~Scene();
-    void update(Events &e, f32 dt);
+    void update(const Events &e, f32 dt);
     void render();
 
 private:

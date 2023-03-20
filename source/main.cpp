@@ -27,6 +27,10 @@ int main() {
         auto t1 = clock.now();
 
         auto events = Window::pollEvents();
+
+        if (events.keyPressed(KEY_ESCAPE))
+            Window::shouldClose(true);
+
         scene.update(events, deltaTime);
         scene.render();
         Window::swapBuffers();

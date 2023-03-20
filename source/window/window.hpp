@@ -24,6 +24,7 @@ namespace Window {
     void initialize(const Config &cfg);
     void terminate();
     bool shouldClose();
+    void shouldClose(bool);
     const Events &pollEvents();
     void swapBuffers();
     void swapInterval(i32 i);

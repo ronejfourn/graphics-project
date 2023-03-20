@@ -210,23 +210,23 @@ void Window::_sleep(u32 ms)
 
 static int translateKeyEvent(X11::XKeyEvent *ke)
 {
-    X11::KeySym ks = XLookupKeysym(ke, 1);
+    X11::KeySym ks = XLookupKeysym(ke, 0);
 
     switch (ks)
     {
-        case XK_A: return KEY_A; case XK_B: return KEY_B;
-        case XK_C: return KEY_C; case XK_D: return KEY_D;
-        case XK_E: return KEY_E; case XK_F: return KEY_F;
-        case XK_G: return KEY_G; case XK_H: return KEY_H;
-        case XK_I: return KEY_I; case XK_J: return KEY_J;
-        case XK_K: return KEY_K; case XK_L: return KEY_L;
-        case XK_M: return KEY_M; case XK_N: return KEY_N;
-        case XK_O: return KEY_O; case XK_P: return KEY_P;
-        case XK_Q: return KEY_Q; case XK_R: return KEY_R;
-        case XK_S: return KEY_S; case XK_T: return KEY_T;
-        case XK_U: return KEY_U; case XK_V: return KEY_V;
-        case XK_W: return KEY_W; case XK_X: return KEY_X;
-        case XK_Y: return KEY_Y; case XK_Z: return KEY_Z;
+        case XK_a: return KEY_A; case XK_b: return KEY_B;
+        case XK_c: return KEY_C; case XK_d: return KEY_D;
+        case XK_e: return KEY_E; case XK_f: return KEY_F;
+        case XK_g: return KEY_G; case XK_h: return KEY_H;
+        case XK_i: return KEY_I; case XK_j: return KEY_J;
+        case XK_k: return KEY_K; case XK_l: return KEY_L;
+        case XK_m: return KEY_M; case XK_n: return KEY_N;
+        case XK_o: return KEY_O; case XK_p: return KEY_P;
+        case XK_q: return KEY_Q; case XK_r: return KEY_R;
+        case XK_s: return KEY_S; case XK_t: return KEY_T;
+        case XK_u: return KEY_U; case XK_v: return KEY_V;
+        case XK_w: return KEY_W; case XK_x: return KEY_X;
+        case XK_y: return KEY_Y; case XK_z: return KEY_Z;
         case XK_0: return KEY_0; case XK_1: return KEY_1;
         case XK_2: return KEY_2; case XK_3: return KEY_3;
         case XK_4: return KEY_4; case XK_5: return KEY_5;

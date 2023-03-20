@@ -11,9 +11,8 @@ uniform mat4 sunViewProj;
 out vec3 normal;
 out vec3 texCoord;
 out vec4 lsPos;
-out float aoFactor;
-out float flogz;
 out vec3 viewDir;
+out float aoFactor;
 
 float aoArr[4] = float[4](0.25f, 0.5f, 0.75f, 1.0f);
 
@@ -24,8 +23,7 @@ vec3 norms[3] = vec3[3](
 );
 
 const float ZFAR = 1000000.0;
-const float FCOEF = 2.0 / log2(ZFAR + 1.0);
-const float HALF_FCOEF = 0.5 * FCOEF;
+const float FCOEF = 4.0 / log2(ZFAR + 1.0);
 
 void main() {
     uint v = aVert;
@@ -52,10 +50,8 @@ void main() {
 
     vec3 pos = vec3(x + xz.x, y, z + xz.y);
     gl_Position = camViewProj * vec4(pos, 1.0f);
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * FCOEF - 1.0) * gl_Position.w;
+
     lsPos = sunViewProj * vec4(pos, 1.0f);
-
-    gl_Position.z = log2(max(1e-6, 1.0 + gl_Position.w)) * FCOEF - 1.0;
-    flogz = 1.0 + gl_Position.w;
-
     viewDir = normalize(pos - camPos);
 }

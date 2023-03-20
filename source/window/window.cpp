@@ -33,6 +33,10 @@ bool Window::shouldClose() {
     return events.quit;
 }
 
+void Window::shouldClose(bool t) {
+    events.quit = t;
+}
+
 const Events &Window::pollEvents() {
     ASSERT(initialized, "Platform not initialized");
     events.advance();

@@ -54,6 +54,10 @@ Sky::Sky(const Vec3 &pos) :
 
     m_sun.proj = mat4Orthographic(240, 240, 256);
     m_sun.direction = Vec3(-1.0f,  0.0f,  0.0f);
+    m_sun.angle = 60.0f;
+
+    const Mat4 rot  = mat4RotationZ(DEG2RAD(m_sun.angle));
+    m_sun.direction = Vec3(rot * Vec4(m_sun.direction));
 
     Vec3 dir = normalize(m_sun.direction);
     Vec3 src = pos;
@@ -111,7 +115,7 @@ void Sky::update(const Camera &camera, f32 deltaTime)
     else if (m_sun.angle < 360.0f) diff = lerp(0.0f, 0.2f, (m_sun.angle - 315.0f) / (360.0f - 315.0f));
     else m_sun.angle = 0, diff = 0.2f;
     m_sun.diffuse = Vec3(diff);
-    m_sun.ambient = Vec3(1.1f, 1.0f, 0.7f) * max(diff, 0.2f);
+    m_sun.ambient = Vec3(1.1f, 1.0f, 0.9f) * max(diff, 0.2f);
 }
 
 void Sky::render(const Camera &camera)
