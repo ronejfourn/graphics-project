@@ -23,23 +23,23 @@ cd build
 ```
 
 ## Controls
-`W` or `Up`    move forwards
-`S` or `Down`  move backwards
-`A` or `Left`  move left
-`D` or `Right` move right
-
-`H` pan left
-`J` tilt down
-`K` tilt up
-`L` pan right
-
-`F` fast forward
-`R` toggle sun movement
-`T` toggle wireframe/fill
-
-`1` toggle environment mapping
-`2` toggle lighting
-`3` toggle shadows
-`4` toggle ambient occlusion
-`5` toggle fog
-`6` toggle back face culling
+`W` or `Up`    move forwards  
+`S` or `Down`  move backwards  
+`A` or `Left`  move left  
+`D` or `Right` move right  
+  
+`H` pan left  
+`J` tilt down  
+`K` tilt up  
+`L` pan right  
+  
+`F` fast forward  
+`R` toggle sun movement  
+`T` toggle wireframe/fill  
+  
+`1` toggle environment mapping  
+`2` toggle lighting  
+`3` toggle shadows  
+`4` toggle ambient occlusion  
+`5` toggle fog  
+`6` toggle back face culling  
