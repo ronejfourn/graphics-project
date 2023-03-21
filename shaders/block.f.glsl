@@ -6,6 +6,7 @@ in vec3 texCoord;
 in vec3 viewDir;
 in vec4 lsPos;
 in float aoFactor;
+in float projZ;
 
 struct Settings {
     bool doEnvMap;
@@ -44,13 +45,10 @@ float getShadow(float d) {
 
 vec3 applyFog(vec3 rgb)
 {
-    const float fogDensity = 0.00001f;
+    const float fogDensity = 0.00002f;
     float sunAmount = max(-dot(viewDir, sun.direction), 0.0) * mix(1.0f, 0.0f, min(abs(sun.direction.y) / 0.6f, 1.0f));
-    vec3  fogColor  = mix(vec3(0.5f, 0.6f, 0.8f),
-                          vec3(1.1f, 1.0f, 0.7f),
-                          sunAmount * sunAmount);
-    float z = gl_FragCoord.z / gl_FragCoord.w;
-    float fogAmount = 1 - clamp(exp(-fogDensity * z * z), 0, 1);
+    vec3  fogColor  = mix(vec3(0.5f, 0.6f, 0.8f), vec3(1.1f, 1.0f, 0.7f), sunAmount * sunAmount);
+    float fogAmount = 1 - clamp(exp(-fogDensity * projZ * projZ), 0, 1);
     return mix(rgb, fogColor, fogAmount);
 }
 
@@ -63,8 +61,10 @@ vec3 calcLight()
     float diff = max(-dotp, 0.0f);
     vec3 diffuse = diff * sun.diffuse;
 
-    float shininess = 16.0f + 112.0f * float(texCoord.z == 6);
-    float specularStrength = 0.5f;
+    float isWater = float(texCoord.z == 6);
+
+    float shininess = 16.0f + 112.0f * isWater;
+    float specularStrength = 0.4f + 0.6f * isWater;
     vec3 reflectDir = reflect(-sun.direction, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     vec3 specular = specularStrength * spec * sun.diffuse;

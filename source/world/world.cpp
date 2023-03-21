@@ -3,6 +3,7 @@
 #include "world/chunk.hpp"
 #include "world/block.hpp"
 #include "rendering/shader.hpp"
+#include <algorithm>
 
 struct ChunkDistPair {
     Chunk *ptr;
@@ -127,6 +128,10 @@ void World::generate(u64 seed, const Vec3 &pos)
         m_chunks[i].update();
 }
 
+static bool operator > (const ChunkDistPair &a, const ChunkDistPair &b) {
+    return a.dist > b.dist;
+}
+
 void World::_sortChunks(const Vec3 &pos)
 {
     const i32 m = m_nchunks * m_nchunks;
@@ -136,11 +141,7 @@ void World::_sortChunks(const Vec3 &pos)
         m_sortedChunks[i] = {&m_chunks[i], dist};
     }
 
-    auto compare = [](const void *a, const void *b)->int {
-        return ((ChunkDistPair *)a)->dist < ((ChunkDistPair *)b)->dist;
-    };
-
-    qsort(m_sortedChunks, m, sizeof(ChunkDistPair), compare);
+    std::sort(m_sortedChunks, m_sortedChunks + m, std::greater<ChunkDistPair>());
 }
 
 World::~World()

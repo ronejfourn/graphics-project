@@ -4,7 +4,7 @@
 #include <cstdio>
 
 static const Vec3 DEF_CAMERA_POS(-100, 140, 50);
-constexpr u32 RENDER_DISTANCE = 32;
+constexpr u32 RENDER_DISTANCE = 16;
 
 static bool cullFace = true;
 
@@ -38,6 +38,7 @@ Scene::Scene() :
 
     f32 far = magnitude(Vec3(0, 0, 0) - Vec3((RENDER_DISTANCE + 1) * 15.0f, 0, 0));
     m_camera.setPlanes(0.0001f, far);
+    m_camera.setAspectRatio((f32)1280 / (f32)720);
 
     m_world.generate(123456789, DEF_CAMERA_POS);
 }
@@ -112,7 +113,7 @@ void Scene::update(const Events &events, f32 deltaTime)
 
     m_world.update(m_camera.getPosition());
 
-    static bool rev = false;
+    static bool rev = true;
     if (events.keyPressed(KEY_R))
         rev = !rev;
 

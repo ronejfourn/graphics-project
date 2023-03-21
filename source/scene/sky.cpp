@@ -54,7 +54,6 @@ Sky::Sky(const Vec3 &pos) :
 
     m_sun.proj = mat4Orthographic(240, 240, 256);
     m_sun.direction = Vec3(-1.0f,  0.0f,  0.0f);
-    m_sun.angle = 60.0f;
 
     const Mat4 rot  = mat4RotationZ(DEG2RAD(m_sun.angle));
     m_sun.direction = Vec3(rot * Vec4(m_sun.direction));

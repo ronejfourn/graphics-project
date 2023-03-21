@@ -13,6 +13,7 @@ out vec3 texCoord;
 out vec4 lsPos;
 out vec3 viewDir;
 out float aoFactor;
+out float projZ;
 
 float aoArr[4] = float[4](0.25f, 0.5f, 0.75f, 1.0f);
 
@@ -50,6 +51,7 @@ void main() {
 
     vec3 pos = vec3(x + xz.x, y, z + xz.y);
     gl_Position = camViewProj * vec4(pos, 1.0f);
+    projZ = gl_Position.z;
     gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * FCOEF - 1.0) * gl_Position.w;
 
     lsPos = sunViewProj * vec4(pos, 1.0f);
